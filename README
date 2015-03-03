@@ -1,9 +1,9 @@
-IMCMCrun is used to perform a seismic inversion using a fast eikonal solver and interactive markov chains 
-algorithm. TODO add reference to the article when it is done. Author : Alexis Bottero (alexis Dot bottero 
-At gmail Dot com). Feel free to contact me for any questions. 
-Source code (c/c++/fortran) can be found in directory src. This program include wavelet library : 
-Wavelib. This program can be run in parallel on a CPU cluster. 
-Directory utils contains some useful python script to watch the results of an inversion.
+IMCMCrun is used to perform a seismic inversion using a fast eikonal solver and an algorithm based on interactive 
+markov chains. (TODO add a reference to the article when it is done). 
+Author : Alexis Bottero (alexis Dot bottero At gmail Dot com). Feel free to contact me for any questions. 
+Source code (c/c++/fortran) can be found in directory src. This program include wavelet library : Wavelib. 
+This program can be run in parallel on a CPU cluster. Directory utils contains some useful python scripts to watch 
+the results of an inversion.
 
 PREREQUISITES
 =============
@@ -13,27 +13,27 @@ _For parallel usage : openmpi
 _For the python scripts to analyse the results : python2 with modules numpy,matplotlib,argparse,glob,mpl_toolkits
 (Normaly included with all Debian distributions)
 _fftw3 http://www.fftw.org/download.html. This program is needed. It is easy to install (read INSTALL file). Just 
-mind the place where you install it. By default it is installed in /usr/local/bin, /usr/local/lib, /usr/local/include and
-/usr/local/share but you can specified an other directory when configuring by using --prefix:
+mind the place where you install it. By default it is installed in /usr/local/ (/usr/local/bin, /usr/local/lib, /usr/local/include and
+/usr/local/share) but you can specified an other directory when configuring by using --prefix:
 ./configure --prefix=/absolute/path/to/the/directory/you/want
 
 GETTING STARTED 
 ===============
 
 1.Edit the Makefile:
-     _FFTW3_INCLUDE=/path/fftw3/install/directory/include     # default /usr/local/include
-     _FFTW3_LIB=/path/fftw3/install/directory/lib             # default /usr/local/lib
-     _Link flags to handle Fortran/C++ instructions : _GNU MPI compilers -lgfortran
-                                                      _INTEL compiler -lifcore
+     _FFTW3_INCLUDE=/path/to/fftw3/install/directory/include     # default /usr/local/include
+     _FFTW3_LIB=/path/to/fftw3/install/directory/lib             # default /usr/local/lib
+     _Mind linker flags to handle Fortran/C++ instructions : _For GNU MPI compilers -lgfortran
+                                                             _For INTEL compilers -lifcore
                                                       
 2.Go to examples/HomogeneousSynthetic
 
-3.Edit configExample.cfg, this file contains all the information on this example run (have a look to it! convenient 
+3.Edit configExample.cfg, this file contains all the information on this example run (have a look at it! convenient 
   highlighting : Ruby)
      _Change the line : DATA_DIRECTORY = /absolute/path/to/IMCMCrun/examples/HomogeneousSynthetic/dataExample/
 
-4.Edit run_that_example.sh. Have a look to this script, it will compile the program and run the example.
-     _MPI mode : MPI='yes' (otherwise 'no') and set the number of processes in NPROC=
+4.Edit run_that_example.sh. Have a look to that script as well, it will compile the program and run the example.
+     _MPI mode : MPI='yes' (otherwise 'no') and set the number of processes in NPROC=...
 
 5. Execute the file run_that_example.sh (./run_that_example.sh). This will appears :
 
