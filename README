@@ -1,0 +1,212 @@
+IMCMCrun is used to perform a seismic inversion using a fast eikonal solver and interactive markov chains 
+algorithm. TODO add reference to the article when it is done. Author : Alexis Bottero (alexis Dot bottero 
+At gmail Dot com). Feel free to contact me for any questions. 
+Source code (c/c++/fortran) can be found in directory src. This program include wavelet library : 
+Wavelib. This program can be run in parallel on a CPU cluster. 
+Directory utils contains some useful python script to watch the results of an inversion.
+
+PREREQUISITES
+=============
+
+_C++/Fortran compilers : GNU (g++/gfortran) or Intel (icc/ifort) 
+_For parallel usage : openmpi
+_For the python scripts to analyse the results : python2 with modules numpy,matplotlib,argparse,glob,mpl_toolkits
+(Normaly included with all Debian distributions)
+_fftw3 http://www.fftw.org/download.html. This program is needed. It is easy to install (read INSTALL file). Just 
+mind the place where you install it. By default it is installed in /usr/local/bin, /usr/local/lib, /usr/local/include and
+/usr/local/share but you can specified an other directory when configuring by using --prefix:
+./configure --prefix=/absolute/path/to/the/directory/you/want
+
+GETTING STARTED 
+===============
+
+1.Edit the Makefile:
+     _FFTW3_INCLUDE=/path/fftw3/install/directory/include     # default /usr/local/include
+     _FFTW3_LIB=/path/fftw3/install/directory/lib             # default /usr/local/lib
+     _Link flags to handle Fortran/C++ instructions : _GNU MPI compilers -lgfortran
+                                                      _INTEL compiler -lifcore
+                                                      
+2.Go to examples/HomogeneousSynthetic
+
+3.Edit configExample.cfg, this file contains all the information on this example run (have a look to it! convenient 
+  highlighting : Ruby)
+     _Change the line : DATA_DIRECTORY = /absolute/path/to/IMCMCrun/examples/HomogeneousSynthetic/dataExample/
+
+4.Edit run_that_example.sh. Have a look to this script, it will compile the program and run the example.
+     _MPI mode : MPI='yes' (otherwise 'no') and set the number of processes in NPROC=
+
+5. Execute the file run_that_example.sh (./run_that_example.sh). This will appears :
+
+    Starting Program...
+
+    ========================================================
+                     IMPORTANCE RESAMPLING MCMC             
+    ========================================================
+    This is the run number 999                                  --> This code is generated randomly : remember it
+
+    ...
+       the program will run for a while...
+    ...
+    
+6. At the end to see the results of the run (replace 999 by the code of your run) :
+    ../../utils/watchResults.py ../../OUTPUT_FILES/999/ -a
+
+
+MANUAL
+======
+
+This part just contains few information. Please read carefully the HomogeneousSynthetic/configExample.cfg as it contains details
+on different options.
+
+Max and min values are computed from iteration TRESH=50 for now. This value can be modified in src/define.h
+
+The wavelet transforms are performed on profiles of the same size than the first guess file(s)
+
+Velocity model on file :     velocity model calculated by FTeik :
+
+ z    velocity
+                                  z=0  ------------
+2.625   4125.32                            4125.32
+                               z=5.25  ------------      
+7.875   4112.56                            4112.56
+                               z=10.5  ------------
+13.125  4116.12     ------>                4116.12
+                              z=15.75  ------------
+18.375  4128.23                            4128.23
+                               z=21.0  ------------
+23.625  4124.78                            4124.78
+    ...                       z=26.25  ------------
+    ...                              ...
+All z borders are automaticaly calculated by the program
+    
+As filtered profiles are of lower frequency, we can remove points before performing the eikonal without changing the result. 
+This is done as below :  !! Warning in c++ indices start at 0 (to nz-1) !! 
+
+  z[1]   -        zFilt[1]     -            ^
+        dz                  dzFilt          |
+  z[2]   -                                  |
+                  zFilt[2]     -            |
+  z[3]   -   --->                           |
+                                            |
+  z[4]   -        zFilt[3]     -            | zmax-zmin = (nz-1)*dz = (nzFilt-1)*dzFilt   =>   dzFilt = dz*(nz-1)/(nzFilt-1)
+                                            |
+  z[5]   -                                  |
+                                            |
+   ...                ...                   |
+                                            |
+  z[nz] -        zFilt[nzFilt] -            v
+ 
+ 
+ The value of the velocity in each interval of the filtered profile is interpolated. 
+ 
+FILES CREATED BY THE PROGRAM
+============================
+I is the index of the chain at temperature TI
+
+_Prior features file : if minParameters[i] = maxParameters[i] for a given i the parameter will be considered as static. We do not
+inverse it (it is not a real parameter actually)
+
+_Times files * (the second column is needed if we calculate S waves (flag SWAVES)): 
+  timeP(shot 1,receiver 1) timeS(shot 1,receiver 1)
+  timeP(shot 1,receiver 2) timeS(shot 1,receiver 2)
+  ...
+  timeP(shot 1,receiver NR) timeS(shot 1,receiver NR)
+  timeP(shot 2,receiver 1) timeS(shot 2,receiver 1)
+  ...
+  timeP(shot 2,receiver NR) timeS(shot 2,receiver NR)
+  timeP(shot 3,receiver 1) timeS(shot 3,receiver 1)
+  ...
+  ...
+  timeP(shot 1,receiver 1) timeS(shot 1,receiver 1) 
+
+XXX are 3 digit that are different for each run. They are used distinguish files from different runs
+
+_calculatedTimes.XXX.dat : Created by analytical run, contains the times calculated from the real model given (same structure than *)
+
+_chainI.XXX.dat : param1 | param2 | param3 | ... | paramN | Energy   |
+                  param1 | param2 | param3 | ... | paramN | Energy   | steps
+                  param1 | param2 | param3 | ... | paramN | Energy   v
+                                    ...
+_statsI.XXX.dat : at | rt | od | ps | as | rs | acceptance probability | swapping probability
+       at : Number of accepted MH transitions
+       rt : Number of rejected MH transitions
+       od : Number of "out of domain"s
+       ps : Number of proposed swaps
+       as : Number of accepted swaps
+       rs : Number of rejected swaps
+
+_ll.XXX.dat : N | i | sp
+       i  : Index of the chain whose state has been swapped
+       N  : Index of the state of the chain i that have been swapped 
+       sp : Index of the state of the chain i+1 that has been chosen
+
+_sci.XXX.dat : Importance Weights matrix 
+
+_averagePI.XXX.dat : average P wave velocity with depth generated by chain I
+
+_averageSI.XXX.dat : average S wave velocity with depth generated by chain I
+
+_varPI.XXX.dat : variance of P wave velocity with depth for chain I
+
+_varSI.XXX.dat : variance of S wave velocity with depth for chain I
+
+_qInfPI.XXX.dat :
+
+_qInfSI.XXX.dat :
+
+_qSupPI.XXX.dat :
+
+_qSupSI.XXX.dat :
+
+TIPS
+====
+
+_If you want to run the program again you don't need to compile it again, just edit the file run_that_example.sh : MAKEALL='no'
+_To delete all file created but not OUTPUT_FILES : "make clean", to delete everything "make purge"
+_If there is a bug first thing to do : VERBOSE1=1 and VERBOSE2 = 1 in .cfg file
+_If you stop a run before it ends you can still analyse the first results
+                               
+WARNINGS
+========
+
+_If you perform an ANALYTICAL_RUN, the file NAME_OF_REAL_PROFILE_FILE_P (and NAME_OF_REAL_PROFILE_FILE_S) must be of the form :
+z | v(z) with a step fixed (i.e z[1]-z[0] = z[2]-z[1] = ...)
+_Do not put source too close from z borders there is no security for now (this might cause segmentation faults in the eikonal solver)
+_The grid is automaticaly set from the position of sources/receivers. The margin in driven by COORD_TOL.
+_If by chance two runs have the same key XXX the last one will erase the previous one (1 chance over 1000)
+_Z must point downwards (...z[2]>z[1]>z[0])
+_Coordinates must be >> TINYVAL (defined in src/define.h).
+_In the .cfg file "NC = 4,4," for example -> will produce a bug (we would have to trim useless comas)
+_We need a dyadic (2^N : 32,64,128,256...) number of points to describe the first guess or real velocity model curves 
+ (to make the wavelet transform)
+
+TODO
+====
+
+How to make this code better : _Improve this README file
+                               _Put TRESH (file and control) in .cfg file
+                               _NXREF NYREF for find optimum grid
+                               _See why BestModelP and BestModelS different!
+                               _Remove system commands
+                               _Replace exit commands by custom_exit (create that function taking MPI into account. It could create a file. Put the "terminating" messages on it)
+                               _Add options in the Makefile and put *genmod* files in obj
+                               _verify that dz is constant
+                               _Continue the function : checkConfig (filesAndControl.cpp)
+                               _Fix keepNsignificantValues (generalFunctions.cpp) : see comments near this function
+                               _Ctrl+f TODO in all files
+                               _Parallelize the function createDataset (initializations.cpp)
+                               _Make first guess curves optionnal
+                               _Parallelize on chains
+                               _Add an estimation of the final time (function printEvolution)
+                               _While we give Configuration* to every function we could create a Singleton
+                               _To avoid if(config->verbose1 && config->mpiConfig.rank == 0) everywhere we might redefine std::cout?
+                               _Use FTeik2D for 2D problems and a simple calculation (t=d/v) for 1D problems.
+                               _Write "Mean differences at the receivers between big run and that run for shot number "<< shotNumber << " : "  << averageDiffs[min_index] on a file
+                               _Improve findOptimumGrid and buildPrior
+                               _Test si le premier point de z est negatif
+                               _Completer le fichier config       
+                               _In build prior calculate Tmax        
+                               _Script redoThatRun.sh XXX -> copy files, par_file, seed...
+                               _Write all file with c++ fashion (filesAndControl.cpp)
+                               _Record min and max velocity values after a given iteration
+

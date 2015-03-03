@@ -1,0 +1,158 @@
+*********************** Importance resampling MCMC ***********************
+*************************** REALISTIC DATASET ****************************
+***************** configuration file for run number 260 ******************
+Starting time : 03/Mar/2015 16:41:00.
+Seed of the random number generator = 1425397260
+                           === MPI MODE ===
+2 processes running on : Precision-T7610
+
+D A T A S E T  U S E D
+
+  S waves are calculated
+It is an analytical run :
+For this simulation we already know the real velocity model, it has been loaded from the files : realPhomo512.txt and realShomo512.txt
+These are the 5 first lines : (z vp vs)
+99.6086 7000 3000 
+100.391 7000 3000 
+101.174 7000 3000 
+101.957 7000 3000 
+102.74 7000 3000 
+
+(dz = 0.782779)
+
+  The sources and receivers positions are on the files : /home1/bottero/Dropbox/Travail/StageLMA/DonneesRealistesLMA/IMCMCrun/examples/HomogeneousSyntheticFewStations/dataExample/coordShots.txt/home1/bottero/Dropbox/Travail/StageLMA/DonneesRealistesLMA/IMCMCrun/examples/HomogeneousSyntheticFewStations/dataExample/coordStats.txt
+  Number of shots : 1
+    Shot number 0 at (x=350, y=350, z=400)
+  Number of stations : 36
+    Station number 0 at (x=200, y=200, z=250)
+    Station number 1 at (x=400, y=400, z=250)
+    Station number 2 at (x=600, y=600, z=250)
+    Station number 3 at (x=100, y=100, z=250)
+    Station number 4 at (x=300, y=300, z=250)
+    Station number 5 at (x=500, y=500, z=250)
+    Station number 6 at (x=200, y=200, z=250)
+    Station number 7 at (x=400, y=400, z=250)
+    Station number 8 at (x=600, y=600, z=250)
+    Station number 9 at (x=100, y=100, z=250)
+    Station number 10 at (x=300, y=300, z=250)
+    Station number 11 at (x=500, y=500, z=250)
+    Station number 12 at (x=200, y=200, z=250)
+    Station number 13 at (x=400, y=400, z=250)
+    Station number 14 at (x=600, y=600, z=250)
+    Station number 15 at (x=100, y=100, z=250)
+    Station number 16 at (x=300, y=300, z=250)
+    Station number 17 at (x=500, y=500, z=250)
+    Station number 18 at (x=200, y=200, z=350)
+    Station number 19 at (x=400, y=400, z=350)
+    Station number 20 at (x=600, y=600, z=350)
+    Station number 21 at (x=100, y=100, z=350)
+    Station number 22 at (x=300, y=300, z=350)
+    Station number 23 at (x=500, y=500, z=350)
+    Station number 24 at (x=200, y=200, z=350)
+    Station number 25 at (x=400, y=400, z=350)
+    Station number 26 at (x=600, y=600, z=350)
+    Station number 27 at (x=100, y=100, z=350)
+    Station number 28 at (x=300, y=300, z=350)
+    Station number 29 at (x=500, y=500, z=350)
+    Station number 30 at (x=200, y=200, z=350)
+    Station number 31 at (x=400, y=400, z=350)
+    Station number 32 at (x=600, y=600, z=350)
+    Station number 33 at (x=100, y=100, z=350)
+    Station number 34 at (x=300, y=300, z=350)
+    Station number 35 at (x=500, y=500, z=350)
+  Standard deviation of P wave arrival times : 0.0025
+  Standard deviation of S wave arrival times : 0.005
+  Number of points in P wave velocity first guess : 512
+  Number of points in S wave velocity first guessS : 512
+
+P R I O R  K N O W L E D G E  O N  T H E  P A R A M E T E R S
+
+  Number of parameters : 8
+  (DI : 1, DF : 20)
+                  min     max     delta for T0   delta for T1   delta for T2   
+  Parameter 0 : 54302.2  126705     3620.14         8162.62         72402.9           (refer to wavelet coefficient number 0 of the P wave velocity first guess)
+  Parameter 1 : 54302.2  126705     3620.14         8162.62         72402.9           (refer to wavelet coefficient number 1 of the P wave velocity first guess)
+  Parameter 2 : 54302.2  126705     3620.14         8162.62         72402.9           (refer to wavelet coefficient number 2 of the P wave velocity first guess)
+  Parameter 3 : 54302.2  126705     3620.14         8162.62         72402.9           (refer to wavelet coefficient number 3 of the P wave velocity first guess)
+  Parameter 4 : 16969.4  39595.3     1131.29         2550.82         22625.9           (refer to wavelet coefficient number 0 of the P wave velocity first guess)
+  Parameter 5 : 16969.4  39595.3     1131.29         2550.82         22625.9           (refer to wavelet coefficient number 1 of the S wave velocity first guess)
+  Parameter 6 : 16969.4  39595.3     1131.29         2550.82         22625.9           (refer to wavelet coefficient number 2 of the S wave velocity first guess)
+  Parameter 7 : 16969.4  39595.3     1131.29         2550.82         22625.9           (refer to wavelet coefficient number 3 of the S wave velocity first guess)
+
+  Energy of the prior : 84.8674
+
+P A R A M E T E R S  O F  T H E  E I K O N A L
+
+  nx: 20  ny: 20  nz: 513
+  nzFilt: 50
+  dx: 42.1053  dy: 42.1053  dz: 0.782779
+  dzFilt: 8.17924
+  xmin: -50  xmax: 750
+  ymin: -50  ymax: 750
+  zmin: 99.6086  zmax: 500.391
+  Number of sweeps : 0
+  EPSIN : 5
+
+O U T P U T  P A R A M E T E R S
+
+  Output directory : ./OUTPUT_FILES/260/
+  Quantile chosen : 0.95
+
+C O N F I G  O F  T H E  A L G O R I T H M
+
+  Number of different temperatures : 3
+  Temperature max : 200
+  Number of iterations 5000
+  Probability of allowing swapping : 0.25
+  Number of components to modify in a MH iteration as a function of T : 
+    For T0 : 4      For T1 : 4      For T2 : 4  
+  Temperature ladder : T[0] = 1  T[1] = 14.1421  T[2] = 200  
+
+W A V E L E T  C O N F I G
+
+  Wavelet used : haar
+  Number of DWT stages : 20
+  Size of coeffsP : 512
+  Size of flagP : 2
+  Size of lengthP : 9
+  Size of coeffsS : 512
+  Size of flagS : 2
+  Size of lengthS : 9
+
+S U M M A R Y  O F  T H E  R U N
+
+  _Chain [0] 
+    Number of accepted MH transitions : 1280
+    Number of rejected MH transitions : 2186
+    Acceptance probability : 36.9302 % 
+    Number of -out of domain- : 231
+    Number of proposed swaps : 1303
+    Number of accepted swaps : 726
+    Number of rejected swaps : 577
+    Probability of swapping : : 55.7176 % 
+
+
+  _Chain [1] 
+    Number of accepted MH transitions : 1548
+    Number of rejected MH transitions : 1261
+    Acceptance probability : 55.1086 % 
+    Number of -out of domain- : 932
+    Number of proposed swaps : 1259
+    Number of accepted swaps : 800
+    Number of rejected swaps : 459
+    Probability of swapping : : 63.5425 % 
+
+
+  _Chain [2] 
+    Number of accepted MH transitions : 3058
+    Number of rejected MH transitions : 1942
+    Acceptance probability : 61.16 % 
+    Number of -out of domain- : 0
+    Number of proposed swaps : 0
+    Number of accepted swaps : 0
+    Number of rejected swaps : 0
+    Probability of swapping : : -nan % 
+
+
+
+Final time : 03/Mar/2015 16:45:53.

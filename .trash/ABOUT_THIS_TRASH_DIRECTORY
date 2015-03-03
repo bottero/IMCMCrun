@@ -1,0 +1,15 @@
+This directory contains :
+_Attempts to create a Makefile structure like :
+
+                  main directory -> main Makefile
+                      /   \
+                     /     \
+                    /       \
+                   src      obj
+                  /   \
+                 /     \
+                /       \
+              wavelib   rgs ...
+                 |       |
+                 v       v
+             Makefile Makefile              

@@ -1,0 +1,128 @@
+double getTime(tab3d<double>* tt3d,Coordinate coord, Configuration* config)
+// Give the time at coord even if it is not on a point of the grid
+{
+  std::cout << "coords of the receiver : " << coord.x << " " << coord.y << " " << coord.z << " "; //TODO remove
+  std::cout << std::endl << "d : " << sqrt(powf(config->data.coordShots[0].x-coord.x,2)+powf(config->data.coordShots[0].y-coord.y,2)+powf(config->data.coordShots[0].z-coord.z,2))<< std::endl ; //TODO remove 
+      for(int iz=0; iz < config->data.nz; iz++) {
+        for(int ix=0; ix < config->data.nx; ix++) {
+          for(int iy=0; iy < config->data.ny; iy++) {
+            if (abs(ix*config->data.dx-config->data.coordShots[0].x)<5.0 and abs(iy*config->data.dy-config->data.coordShots[0].y)<5.0 and abs(iz*config->data.dz-config->data.coordShots[0].z)<5.0) {
+              std::cout << tt3d->get(iz,ix,iy) << " coord : "<< ix*config->data.dx << " " << iy*config->data.dy << " " << iz*config->data.dz << "  ";
+              std::cout << "ix : " << ix << " iy : " << iy<< " iz : " << iz << " config->data.dx :" << config->data.dx<< " config->data.dy :" << config->data.dy<< " config->data.dz :" << config->data.dz << std::endl;
+              }
+          }
+        }
+      } 
+       
+  double Z=coord.z/config->data.dz +1; // Z=zin/dzin+1.
+  double X=coord.x/config->data.dx +1; // X=xin/dxin+1.
+  double Y=coord.y/config->data.dy +1; // Y=yin/dyin+1.
+  int iz=(int)floor(Z), ix= (int)floor(X), iy= (int)floor(Y);
+  int kz=iz+1, kx=ix+1, ky=iy+1;
+  double dz1=Z-(double)iz,dx1=X-(double)ix,dy1=Y-(double)iy;
+  double dz2=1.-dz1,dx2=1.-dx1,dy2=1.-dy1;
+  double t = dz2 * dx2 * dy2 * tt3d->get(iz-1,ix-1,iy-1)
+          +  dz1 * dx2 * dy2 * tt3d->get(kz-1,ix-1,iy-1)
+          +  dz2 * dx1 * dy2 * tt3d->get(iz-1,kx-1,iy-1)
+          +  dz2 * dx2 * dy1 * tt3d->get(iz-1,ix-1,ky-1)
+          +  dz2 * dx1 * dy1 * tt3d->get(iz-1,kx-1,ky-1)
+          +  dz1 * dx2 * dy1 * tt3d->get(kz-1,ix-1,ky-1)
+          +  dz1 * dx1 * dy2 * tt3d->get(kz-1,kx-1,iy-1)
+          +  dz1 * dx1 * dy1 * tt3d->get(kz-1,kx-1,ky-1);
+  std::cout << " T : " << t << std::endl;
+  return t;
+}
+
+    for(int iz=0; iz < velModel.nz-1; iz++) {
+      for(int ix=0; ix < velModel.nx-1; ix++) {
+        for(int iy=0; iy < velModel.ny-1; iy++) {
+          velModel.velP->set(iz,ix,iy,config->data.realP[iz]); // (int)DELTAZ*iz
+          if(SWAVES)
+            velModel.velS->set(iz,ix,iy,config->data.realS[iz]);
+        }
+      }
+    }
+    
+        for(int iz=0; iz < velModel.nz; iz++) {
+      for(int ix=0; ix < velModel.nx; ix++) {
+        for(int iy=0; iy < velModel.ny; iy++) {
+            if (abs(ix*velModel.dx-config->data.coordShots[shotNumber].x)<5.0 and abs(iy*velModel.dy-config->data.coordShots[shotNumber].y)<5.0 and abs(iz*velModel.dz-config->data.coordShots[shotNumber].z)<5.0)
+              std::cout << tt3dP.get(iz,ix,iy) << " coord : "<< ix*velModel.dx << " " << iy*velModel.dy << " " << iz*velModel.dz << std::endl;
+          }
+        }
+      }
+
+  std::cout << "nx : " << nx << " ny : " << ny << " nz : " << nz << std::endl;
+  std::cout << "xsin : " << xsin << " ysin : " << ysin << " zsin : " << zsin << std::endl;  
+  std::cout << "dxin : " << dxin << " dyin : " << dyin << " dzin : " << dzin << std::endl;  
+  
+      for (int k=0;k<nz;k++) {
+        for (int j=0;j<ny;j++) {
+          for (int i=0;i<nx;i++) {
+             // if (tt3d->get(i,j,k) < 70.0 and tt3d->get(i,j,k) > 0.1)
+            if (abs(i*dxin-xsin)<5.0 and abs(j*dyin-ysin)<5.0 and abs(k*dzin-zsin)<5.0)
+              std::cout << tt3d->get(k,i,j) << " coord : "<< i*dxin << " " << j*dyin << " " << k*dzin << std::endl;
+          }
+        }
+      }
+      
+  
+  float tval=999.999;
+  float xin=xsin, yin=ysin, zin=zsin;
+      
+            gettimef_(tt3d->get_values(),&nz,&nx,&ny,&dzin,&dxin,&dyin,&tval,&zin,&xin,&yin);
+      std::cout << "Fortran time :" << tval << std::endl ;
+      
+      
+      $(OBJ_DIR)/gettime.o: $(SRC_DIR)/gettime.f90
+	$(CF90) -o $@ -c $< $(F90FLAGS)	
+	
+	    do k = 1,ny
+    do j = 1,nx
+    do i = 1,nz
+      if (tt(i,j,k) < 5.0d0) then
+        write(*,'(I3,A1,I3,A1,I3,A3,F13.6,A9,F13.6,A1,F13.6,A1,F13.6,A1)') i," ",j," ",k," : ",tt(i,j,k)," coord : ",(j-1)*dxin," ",(k-1)*dyin," ",(i-1)*dzin
+      endif
+    enddo
+    enddo
+    enddo
+read(*,*)
+
+
+    for(int j=0;j<(int)config->data.coordStations.size();j++) {
+      arrivalTimes.timesP.push_back(getTime(&tt3dP,config->data.coordStations[j],config));
+      std::cout << "timesP[" << j << "] : " << arrivalTimes.timesP[j] << "    data[" << shotNumber*(int)config->data.coordStations.size()+j << "] : " << config->data.times.timesP[shotNumber*(int)config->data.coordStations.size()+j]  << std::endl;
+    }
+    
+    /*  if (config->mpiConfig.rank == 0) {
+      std::cout << "Meshing" << std::endl;
+      std::cout << "nx : " << nx << "  ny : " << ny<< "  nz : " << nz<< std::endl;
+      std::cout << "(*profile).size() : " << (*profile).size() << std::endl;
+      std::cout << "(int)(config->deltaz*(double)(nz-2)) : " << (int)(config->deltaz*(double)(nz-2)) << std::endl;
+  } */
+  
+      printTime(config);
+      
+      !
+! Get local times of surrounding points
+!______________________________________
+    tv = dble( tt(i-sgntz,j,k) )
+                  if ((i==249) .and. (k==40) .and. (j== 22))  print *,"i : ",i," sgntx : ", sgntx," j : ",j," k : ",k ! TODO remove
+    te = dble( tt(i,j-sgntx,k) )
+                  if ((i==249) .and. (k==40) .and. (j== 22))  print *,"OULU" ! TODO remove
+                  
+                  /*    #ifdef PAR
+    if (config->mpiConfig.rank == 0) 
+      getchar();
+    MPI_Barrier(MPI_COMM_WORLD);
+    #endif */
+
+
+bool fileExists (const std::string name)
+// return true if the file "name" exists 
+{
+  struct stat buffer;   
+  return (stat (name.c_str(), &buffer) == 0); 
+}
+    if (!fileExists(nameP))
+
