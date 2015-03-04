@@ -307,7 +307,8 @@ if args.energies:
         ii=ii+1
         iterationBest[ii-1]=int(bestModel.split("idx")[1].split(".")[0])
         chain[ii-1]=int(bestModel.split("chain")[1].split(".")[0])
-        E[ii-1]=float(bestModel.split("E")[1].split(code)[0].strip("."))
+        E[ii-1]=float(bestModel.split("E")[1].split(code)[0].strip(".")) 
+        # TODO : this does not work if the code is on the energy value : ex code=745 energy=745.23
     if args.verbose:
         print "Models kept after iteration : "+str(args.treshold)+" will be shown"
     from operator import itemgetter
@@ -318,24 +319,24 @@ if args.energies:
     iterationBest=[i for i in iterationBest if i>args.treshold]
     iteration=np.arange(nit)
     for i in np.arange(nbt):
-        plt.plot(iteration,chains[i][:,-1]*T[i])
+        plt.semilogy(iteration,chains[i][:,-1]*T[i])
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     flagForLabel=True
     for j in np.arange(len(iterationBest)):
         if flagForLabel:
-            plt.plot(iteration[iterationBest[j]], T[chain[j]]*chains[chain[j]][:,-1][iterationBest[j]], 'bD', label="Best models saved")
+            plt.semilogy(iteration[iterationBest[j]], T[chain[j]]*chains[chain[j]][:,-1][iterationBest[j]], 'bD', label="Best models saved")
             flagForLabel=False
         else:
-            plt.plot(iteration[iterationBest[j]], T[chain[j]]*chains[chain[j]][:,-1][iterationBest[j]], 'bD')
-    plt.plot(itBestE, T[chainBest]*chains[chainBest][:,-1][itBestE], 'rD', label="Best model")
+            plt.semilogy(iteration[iterationBest[j]], T[chain[j]]*chains[chain[j]][:,-1][iterationBest[j]], 'bD')
+    plt.semilogy(itBestE, T[chainBest]*chains[chainBest][:,-1][itBestE], 'rD', label="Best model")
     if recalculate_t0 is True:
         if swaves:
-            plt.plot(iteration,np.zeros(nit)+nStats*nShots+ep,'b--',linewidth=2,label=r'Behind that line every model can be acceptable ($1\sigma$ misfit for each time)')
+            plt.semilogy(iteration,np.zeros(nit)+nStats*nShots+ep,'b--',linewidth=2,label=r'Behind that line every model can be acceptable ($1\sigma$ misfit for each time)')
         else:
-            plt.plot(iteration,np.zeros(nit)+nStats*nShots/2.0+ep,'b--',linewidth=2)
+            plt.semilogy(iteration,np.zeros(nit)+nStats*nShots/2.0+ep,'b--',linewidth=2)
     plt.legend()
-    plt.plot(iteration,np.zeros(nit)+ep)
+    plt.semilogy(iteration,np.zeros(nit)+ep)
     plt.xlim(xmax=iteration.max())
     plt.rc('font', family='serif')
     plt.xlabel('Iteration number',fontsize='14')

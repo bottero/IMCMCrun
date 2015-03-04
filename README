@@ -184,9 +184,9 @@ TODO
 ====
 
 How to make this code better : _Improve this README file
+                               _Improve eik3d
                                _Put TRESH (file and control) in .cfg file
-                               _NXREF NYREF for find optimum grid
-                               _See why BestModelP and BestModelS different!
+                               _NXREF NYREF for find optimum grid !!
                                _Remove system commands
                                _Replace exit commands by custom_exit (create that function taking MPI into account. It could create a file. Put the "terminating" messages on it)
                                _Add options in the Makefile and put *genmod* files in obj
