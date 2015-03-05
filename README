@@ -118,6 +118,8 @@ _Times files * (the second column is needed if we calculate S waves (flag SWAVES
   ...
   ...
   timeP(shot 1,receiver 1) timeS(shot 1,receiver 1) 
+  
+  ->Negative times are ignored
 
 XXX are 3 digit that are different for each run. They are used distinguish files from different runs
 
