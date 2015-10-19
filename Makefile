@@ -34,7 +34,7 @@ CF90     = gfortran # ifort             # Fortran compiler
 CPPFLAGS = -Wall -O3  -I$(FFTW3_INCLUDE) -L$(FFTW3_LIB) -llib  #-g # -ftz -traceback -ftrapuv -debug all # C++ compiler flags
 F90FLAGS = -O3 #-g #-check all -debug -g -fp-stack-check -traceback -ftrapuv -implicitnone -gen-interfaces -warn all # Fortran compiler flags
 # for debugging: change -O3 -check nobounds to -O0 -check all -debug -g -fp-stack-check -traceback -ftrapuv
-LDFLAGS = -lifcore -lm -lfftw3  -I$(FFTW3_INCLUDE) -L$(FFTW3_LIB) #-lgfortran -lm -lfftw3      # Linker flags 
+LDFLAGS = -lgfortran -lm -lfftw3  -I$(FFTW3_INCLUDE) -L$(FFTW3_LIB) #-lifcore -lm -lfftw3      # Linker flags 
 endif
 
 #******* DO NOT CHANGE ANYTHING BELOW *******#

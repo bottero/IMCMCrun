@@ -6,9 +6,9 @@
 ###################################################
 
 # Recompile all ('yes' or 'no' or 'justWhatHasChanged')
-MAKEALL='yes'
+MAKEALL='no'
 # MPI ('yes' or 'no')
-MPI='no'
+MPI='yes'
 # number of processes
 NPROC=6
 

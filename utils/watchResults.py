@@ -82,7 +82,8 @@ parser.add_argument("--recalculate_t0", help="Force recalculate t0 (even if it h
                     action="store_true")
 parser.add_argument("-s","--swaps", help="Plot the swaps",
                     action="store_true")
-                
+parser.add_argument("--vpvs", help="Plot mean Vp/Vs ratio plus uncertainties",
+                    action="store_true")
 args = parser.parse_args()
 
 ### --- Test arguments --- ###
@@ -294,6 +295,8 @@ if args.all:
     args.energies=True
     args.best=True
     args.data=True
+    if swaves:
+        args.vpvs=True
    # args.swaps=True
     
 if args.energies:
@@ -625,6 +628,29 @@ if args.best:
         plt.ylim(ymax=z.max())
         plt.gca().invert_yaxis()
     plt.legend()
+    
+if args.vpvs:
+    if not swaves:
+        print "Impossible to print Vp/Vs ratio as Swaves had not been calculated during the algorithm"
+    else:
+        i=0
+        plt.hold(True)
+        plt.grid(True)
+        vpFractionalUncertainty = 100*varPs[i][:,1]/averagesP[i][:,1] # Ex: is vp=2500+/-100m/s -> fractional uncertainty 4% vp = 2500+/-4%
+        vsFractionalUncertainty = 100*varSs[i][:,1]/averagesS[i][:,1] # Ex: is vs=2500+/-100m/s -> fractional uncertainty 4% vs = 2500+/-4%
+        print varPs[i][0,1],averagesP[i][0,1]
+        print vpFractionalUncertainty[0],vsFractionalUncertainty[0]
+        ratioFractionalUncertainty = vpFractionalUncertainty + vsFractionalUncertainty
+        meanRatio = averagesP[i][:,1]/averagesS[i][:,1]
+        numericalUncertainty = meanRatio*(vpFractionalUncertainty + vsFractionalUncertainty)/100
+        plt.plot(meanRatio + numericalUncertainty,zFilt,linestyle='--',color=(0.3,0.3,0.7))
+        plt.plot(meanRatio - numericalUncertainty,zFilt,linestyle='--',color=(0.3,0.3,0.7))
+        plt.plot(meanRatio,zFilt,label="Average Vp/Vs for chain "+str(i))
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif')
+        plt.xlabel(r'Ratio Vp/Vs',fontsize='14')
+        plt.ylabel(r'Depth ($m$)',fontsize='14')
+
 if args.swaps:
     print "Not implemented for now"
 #    plt.figure()
