@@ -311,7 +311,7 @@ if args.energies:
         iterationBest[ii-1]=int(bestModel.split("idx")[1].split(".")[0])
         chain[ii-1]=int(bestModel.split("chain")[1].split(".")[0])
         E[ii-1]=float(bestModel.split("E")[1].split(code)[0].strip(".")) 
-        # TODO : this does not work if the code is on the energy value : ex code=745 energy=745.23
+        # TODO : this does not work if the energy value contains the code of the run : ex code=745 energy=745.23
     if args.verbose:
         print "Models kept after iteration : "+str(args.treshold)+" will be shown"
     from operator import itemgetter
@@ -335,7 +335,7 @@ if args.energies:
     plt.semilogy(itBestE, T[chainBest]*chains[chainBest][:,-1][itBestE], 'rD', label="Best model")
     if recalculate_t0 is True:
         if swaves:
-            plt.semilogy(iteration,np.zeros(nit)+nStats*nShots+ep,'b--',linewidth=2,label=r'Behind that line every model can be acceptable ($1\sigma$ misfit for each time)')
+            plt.semilogy(iteration,np.zeros(nit)+nStats*nShots+ep,'b--',linewidth=2,label=r'Behind that line every model can be acceptable ($1\sigma$ misfit for each measurement)')
         else:
             plt.semilogy(iteration,np.zeros(nit)+nStats*nShots/2.0+ep,'b--',linewidth=2)
     plt.legend()
@@ -628,29 +628,55 @@ if args.best:
         plt.ylim(ymax=z.max())
         plt.gca().invert_yaxis()
     plt.legend()
-    
+
+
+################################ VP/VS ################################
 if args.vpvs:
     if not swaves:
         print "Impossible to print Vp/Vs ratio as Swaves had not been calculated during the algorithm"
     else:
-        i=0
-        plt.hold(True)
-        plt.grid(True)
-        vpFractionalUncertainty = 100*varPs[i][:,1]/averagesP[i][:,1] # Ex: is vp=2500+/-100m/s -> fractional uncertainty 4% vp = 2500+/-4%
-        vsFractionalUncertainty = 100*varSs[i][:,1]/averagesS[i][:,1] # Ex: is vs=2500+/-100m/s -> fractional uncertainty 4% vs = 2500+/-4%
-        print varPs[i][0,1],averagesP[i][0,1]
-        print vpFractionalUncertainty[0],vsFractionalUncertainty[0]
-        ratioFractionalUncertainty = vpFractionalUncertainty + vsFractionalUncertainty
-        meanRatio = averagesP[i][:,1]/averagesS[i][:,1]
-        numericalUncertainty = meanRatio*(vpFractionalUncertainty + vsFractionalUncertainty)/100
-        plt.plot(meanRatio + numericalUncertainty,zFilt,linestyle='--',color=(0.3,0.3,0.7))
-        plt.plot(meanRatio - numericalUncertainty,zFilt,linestyle='--',color=(0.3,0.3,0.7))
-        plt.plot(meanRatio,zFilt,label="Average Vp/Vs for chain "+str(i))
-        plt.rc('text', usetex=True)
-        plt.rc('font', family='serif')
-        plt.xlabel(r'Ratio Vp/Vs',fontsize='14')
-        plt.ylabel(r'Depth ($m$)',fontsize='14')
+        for i in np.arange(nbt):
+            plt.figure()
+            plt.hold(True)
+            plt.grid(True)
+            vpFractionalUncertainty = 100*np.sqrt(varPs[i][:,1])/averagesP[i][:,1] # Ex: is vp=2500+/-100m/s -> fractional uncertainty 4% vp = 2500+/-4%
+            vsFractionalUncertainty = 100*np.sqrt(varSs[i][:,1])/averagesS[i][:,1] # Ex: is vs=2500+/-100m/s -> fractional uncertainty 4% vs = 2500+/-4%
+            ratioFractionalUncertainty = vpFractionalUncertainty + vsFractionalUncertainty
+            meanRatio = averagesP[i][:,1]/averagesS[i][:,1]
+            numericalUncertainty = meanRatio*(vpFractionalUncertainty + vsFractionalUncertainty)/100
+            plt.plot(meanRatio + numericalUncertainty,zFilt,linestyle='--',color=(0.3,0.3,0.7),label="Standard deviation")
+            plt.plot(meanRatio - numericalUncertainty,zFilt,linestyle='--',color=(0.3,0.3,0.7))
+            plt.plot(meanRatio,zFilt,label="Average Vp/Vs for chain "+str(i))
+            plt.plot(meanRatio,zFilt,label="Average Vp/Vs for chain "+str(i))
+            # Load best profiles :
+            nBest=len(glob.glob1(args.pathToDir,"bestPprofile*"))
+            bestP=[0]*nBest
+            bestS=[0]*nBest
+            EP=[0]*nBest
+            ES=[0]*nBest
+            ii=0
+            for bestModel in glob.glob1(args.pathToDir,"bestPprofile*"):
+                ii=ii+1
+                EP[ii-1]=float(bestModel.split("E")[1].split(code)[0].strip("."))
+                bestP[ii-1]=np.loadtxt(args.pathToDir+bestModel)
+            ii=0
+            for bestModel in glob.glob1(args.pathToDir,"bestSprofile*"):
+                ii=ii+1
+                ES[ii-1]=float(bestModel.split("E")[1].split(code)[0].strip("."))
+                bestS[ii-1]=np.loadtxt(args.pathToDir+bestModel)
+            from operator import itemgetter
+            idxBestP=min(enumerate(EP), key=itemgetter(1))[0] # index of best model
+            idxBestS=min(enumerate(ES), key=itemgetter(1))[0] # index of best S model (it is the same one!)
+            # End of loading best profiles
+            plt.plot(bestP[idxBestP][:,1]/bestS[idxBestS][:,1],zFilt,linewidth=4,label="Vp/Vs of the best model")
+            plt.rc('text', usetex=True)
+            plt.rc('font', family='serif')
+            plt.xlabel(r'Ratio Vp/Vs',fontsize='14')
+            plt.ylabel(r'Depth ($m$)',fontsize='14')
+            plt.ylim(ymax=zFilt.max())
+            plt.legend()
 
+################################ SWAPS ################################
 if args.swaps:
     print "Not implemented for now"
 #    plt.figure()
