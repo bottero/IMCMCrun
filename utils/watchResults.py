@@ -677,7 +677,9 @@ if args.vpvs:
             plt.rc('font', family='serif')
             plt.xlabel(r'Ratio Vp/Vs',fontsize='14')
             plt.ylabel(r'Depth ($m$)',fontsize='14')
-            plt.ylim(ymax=zFilt.max())
+            #plt.ylim(ymax=zFilt.max())
+            plt.ylim(ymin=zFilt.max())
+            plt.ylim(ymax=zFilt.min())
             plt.legend()
 
 ################################ SWAPS ################################
