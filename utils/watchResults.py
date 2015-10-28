@@ -101,6 +101,10 @@ if not representsInt(code):
 directory... (no stats0 found)"
     sys.exit(0)
 
+if not (args.all or args.data or args.geometry or args.energies or args.best or (args.results != -1) or args.swaps or args.vpvs):
+    print "Nothing has to be done!"
+    sys.exit(0)
+
 ### --- Load files --- ###
 
 # Extract informations from config.XXX.dat :
