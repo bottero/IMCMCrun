@@ -26,6 +26,8 @@ If nzFilt > nz => upsample
 vp in intrapolated by a linear approximation */
 void InverseWaveletTransform(std::vector<double>* filteredLog, const std::vector<double>* coeffsToKeep, Configuration* config, bool sWaves);
 // Calculate the P or S waves velocity profile corresponding to the wavelet coefficients "coeffsToKeep" (P waves : sWaves=false)
+void InverseLayerTransform(std::vector<double>* filteredProfile, const std::vector<double>* params, Configuration* config, bool sWaves);
+// Calculate the P or S waves velocity profile corresponding to the layers params (P waves : sWaves=false)
 void meshing(std::vector<double>* profile, VelocityModel* velModel, bool swaves);
 // Extend the velocity profile on the whole mesh (coarsen the sampling)
 double energy(State* state,Chain* chain, Configuration* config);

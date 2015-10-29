@@ -98,7 +98,7 @@ This is done as below :  !! Warning in c++ indices start at 0 (to nz-1) !!
  
  
  The value of the velocity in each interval of the filtered profile is interpolated.
- 
+
 PARAMETERIZATION
 ================
 
@@ -106,16 +106,16 @@ The objective of the program is to explore the parameter space: {P=(p0,p1,...,pN
 
                                                velocity profile = parameterization(P)
 
-There are two possibilities in this program. 
+There are two possibilities in this program.
   _If waveletParameterization is set to 0 the program uses a layer based parameterization:
       If SWAVES calculated:
         P=(vp0,vp1, ... ,vpNPU-1,vs0,vs1,...,vsNPU-1) --> Hence the dimension of the problem is: 2*NPU
       Otherwise:
         P=(vp0,vp1, ... ,vpNPU-1) --> Hence the dimension of the problem is: NPU
       Where NPU is given in the configuration file.
-      
+
       The setting is as following:
-      
+
       ZTOP ---------------  (ZTOP is given, it is not a parameter)
                vp0,vs0
        z1  ---------------
@@ -127,9 +127,9 @@ There are two possibilities in this program.
     zNPU-1 ---------------
              vpNPU-1,vsNPU-1
    zBOTTOM ---------------  (ZBOTTOM > ZTOP is given, it is not a parameter)
-   
+
    z1,z2... are calculated from ZTOP,ZBOTTOM and NPU
-      
+
   _If waveletParameterization is set to 1 the program uses a parameterization based on wavelet transform. In this cases P is a set
    of wavelet coefficients, the profile is obtained by inverse wavelet transform:
       If SWAVES calculated:

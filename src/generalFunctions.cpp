@@ -113,6 +113,17 @@ void keepNsignificantValues(std::vector<double>* vector, int N)
   }
 }
 
+void keepNfirstValues(std::vector<double>* vector, int N)
+// Keep the N first values in vector. Put the others to 0
+// For example if vector = 10 21 12 12 7 8 and N = 2
+// at the end vector = 10 21 12 0 0 0
+{
+  for (unsigned int i = 0; i < vector->size();i++) {
+    if ((int)i > N-1)
+      (*vector)[i] = 0.0;
+  }
+}
+
 //*****Trim functions created by Fabien Ors*****
 std::string trim_right (const std::string & s, const std::string & t = SPACES)
 {
@@ -134,6 +145,14 @@ std::string trim (const std::string & s, const std::string & t = SPACES)
 {
   std::string d (s);
   return trim_left (trim_right (d, t), t) ;
+}
+
+int closest(std::vector<double>& vec, double value)
+// Returns the indexes of the closest vector's value that's less than or equal to a given value
+{
+  std::vector<double>::iterator it = std::lower_bound(vec.begin(), vec.end(), value);
+  if (it == vec.end()) { return -1; }
+  return std::distance(vec.begin(), it);
 }
 
 //**********************************************

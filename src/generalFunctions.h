@@ -30,11 +30,18 @@ void keepNsignificantValues(std::vector<double>* vector, int N);
 // Keep the N biggest absolute values in vector. Put the others to 0
 // !! Warning !! for example if vector = 10 21 12 12 7 8 and N = 2
 // at the end vector = 0 21 12 12 0 0. We could fix that.
+void keepNfirstValues(std::vector<double>* vector, int N);
+// Keep the N first values in vector. Put the others to 0
+// For example if vector = 10 21 12 12 7 8 and N = 2
+// at the end vector = 10 21 12 0 0 0
 
 //*****Trim functions created by Fabien Ors*****
 std::string trim_right (const std::string & s, const std::string & t = SPACES);
 std::string trim_left (const std::string & s, const std::string & t = SPACES);
 std::string trim (const std::string & s, const std::string & t = SPACES);
 //**********************************************
+
+int closest(std::vector<double>& vec, double value);
+// Returns the indexes of the closest vector's value that's less than or equal to a given value
 
 #endif /* GENERALFUNCTIONS_H_ */

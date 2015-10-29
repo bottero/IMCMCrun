@@ -62,6 +62,7 @@ int main( int argc, char *argv[]) // argc : Number of arguments, argv : the argu
   write_summary(&run,&config); // Write a summary of the run at the end of the file config.XXX.dat
   printTime(&config);          // Print the final time
   finalizeRun(&run);           // Free memory allocated for the chains and finalize MPI
+
   //************************************************  End of the program ********************************************************//
 
   return 0;

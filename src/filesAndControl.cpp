@@ -128,6 +128,10 @@ void write_config(const Run* run, const Configuration* config)
       file << "  Number of points in S wave velocity first guessS : " << config->data.firstGuessS.size() << std::endl;
     
     file << std::endl << "P R I O R  K N O W L E D G E  O N  T H E  P A R A M E T E R S" << std::endl << std::endl;
+    if (config->waveletParameterization)
+      file << std::endl << "Wavelet based parameterization" << std::endl;
+    else
+      file << std::endl << "Layers based parameterization" << std::endl;
     file << "  Number of parameters : " << config->data.minParameters.size() << std::endl;
     file << "  (DI : " << config->di << ", DF : " << config->df << ")" << std::endl;
     file << "                  min     max     ";
@@ -139,10 +143,12 @@ void write_config(const Run* run, const Configuration* config)
       file << " " << config->data.minParameters[i] << "  " << config->data.maxParameters[i] << "     ";
       for (int j=0;j<config->nbt;j++) 
         file << run->chains[j]->deltaParameters[i] << "         ";
-      if(config->swaves && (double(i) > double(config->data.minParameters.size())/2.0) ) // First params are for P waves
-        file << "  (refer to wavelet coefficient number " << config->data.indexParameters[i] << " of the S wave velocity first guess)" << std::endl;
-      else
-        file << "  (refer to wavelet coefficient number " << config->data.indexParameters[i] << " of the P wave velocity first guess)" << std::endl;
+      if (config->waveletParameterization) {
+        if(config->swaves && (i >= (int)((double)config->data.minParameters.size()/2.0) )) // First params are for P waves
+          file << "  (refer to wavelet coefficient number " << config->data.indexParameters[i] << " of the S wave velocity first guess)" << std::endl;
+        else
+          file << "  (refer to wavelet coefficient number " << config->data.indexParameters[i] << " of the P wave velocity first guess)" << std::endl;
+      }
     }
     if((int)(config->data.staticParameters.size()) != 0) {
       file << "  Static parameters :";
@@ -180,17 +186,18 @@ void write_config(const Run* run, const Configuration* config)
     for (int i=0;i<config->nbt;i++) 
       file << "T[" << i << "] = " << config->T[i] << "  ";
     file << std::endl;
+    if (config->waveletParameterization) {
     
-    file << std::endl << "W A V E L E T  C O N F I G" << std::endl << std::endl;  
-    file << "  Wavelet used : " << config->wavelet << std::endl; 
-    file << "  Number of DWT stages : " << config->ndwts << std::endl;
-    file << "  Size of coeffsP : " << config->coeffsP.size() << std::endl;        
-    file << "  Size of flagP : " << config->flagP.size() << std::endl; 
-    file << "  Size of lengthP : " << config->lengthP.size() << std::endl;       
-    file << "  Size of coeffsS : " << config->coeffsS.size() << std::endl;   
-    file << "  Size of flagS : " << config->flagS.size() << std::endl; 
-    file << "  Size of lengthS : " << config->lengthS.size() << std::endl;       
-        
+      file << std::endl << "W A V E L E T  C O N F I G" << std::endl << std::endl;
+      file << "  Wavelet used : " << config->wavelet << std::endl;
+      file << "  Number of DWT stages : " << config->ndwts << std::endl;
+      file << "  Size of coeffsP : " << config->coeffsP.size() << std::endl;
+      file << "  Size of flagP : " << config->flagP.size() << std::endl;
+      file << "  Size of lengthP : " << config->lengthP.size() << std::endl;
+      file << "  Size of coeffsS : " << config->coeffsS.size() << std::endl;
+      file << "  Size of flagS : " << config->flagS.size() << std::endl;
+      file << "  Size of lengthS : " << config->lengthS.size() << std::endl;
+    }
     file.close();
   }
 }

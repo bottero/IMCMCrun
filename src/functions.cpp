@@ -105,6 +105,57 @@ void InverseWaveletTransform(std::vector<double>* filteredProfile, const std::ve
   }
 }
 
+void InverseLayerTransform(std::vector<double>* filteredProfile, const std::vector<double>* params, Configuration* config, bool sWaves)
+// Calculate the P or S waves velocity profile corresponding to the layers params (P waves : sWaves=false)
+{
+  int numberOfCoeffsKept=0;
+  if (sWaves == false) { // If we perform the layer transform to P waves velocity profile
+    if(config->swaves) // If we are working with S waves as well
+      numberOfCoeffsKept=(int)((double)config->data.minParameters.size()/2.0); // If we are working with swaves, the first parameters are for P waves coefficients
+    else // If we are just working with P waves
+      numberOfCoeffsKept=(int)((double)config->data.minParameters.size());
+    for(int j=0;j<numberOfCoeffsKept;j++) // Loop on the coefficients
+      config->coeffsP[j]=(*params)[j]; // Copy them into config->coeffsP
+    // Store the filtered profile:
+    (*filteredProfile).resize((int)config->data.zp.size());
+    for(unsigned int i=0;i<config->data.zp.size();i++) {
+      if ((int)i < config->indices[0])
+        (*filteredProfile)[i] = config->coeffsP[0];
+      else if ((int)i >= config->indices.back())
+        (*filteredProfile)[i] = config->coeffsP.back();
+      else {
+        for (int j=0;j<config->npu-2;j++) {
+          if ((int)i >= config->indices[j] and (int)i < config->indices[j+1])
+            (*filteredProfile)[i] = config->coeffsP[j+1];
+        }
+      }
+    }
+  }
+  else { // If we perform the layer transform to S waves velocity profile
+    if(!config->swaves) { // If we are not working with s waves
+      std::cout << "Request for a layer transform of a S waves velocity profile while we should not. Terminating..." << std::endl;
+      exit(0);
+    }
+    numberOfCoeffsKept=(int)((double)config->data.minParameters.size()/2.0);
+    for(int j=0;j<numberOfCoeffsKept;j++) // Loop on the coefficients
+      config->coeffsS[j]=(*params)[j+numberOfCoeffsKept]; // Copy them into config->coeffsS
+    // Store the filtered profile:
+    (*filteredProfile).resize((int)config->data.zp.size());
+    for(unsigned int i=0;i<config->data.zp.size();i++) {
+      if ((int)i < config->indices[0])
+        (*filteredProfile)[i] = config->coeffsS[0];
+      else if ((int)i >= config->indices.back())
+        (*filteredProfile)[i] = config->coeffsS.back();
+      else {
+        for (int j=0;j<config->npu-2;j++) {
+          if ((int)i >= config->indices[j] and (int)i < config->indices[j+1])
+            (*filteredProfile)[i] = config->coeffsS[j+1];
+        }
+      }
+    }
+  }
+}
+
 void meshing(std::vector<double>* profile, VelocityModel* velModel, bool swaves) 
 // Extend the velocity profile on the whole mesh vel
 {
@@ -129,7 +180,10 @@ void makeVel(VelocityModel* velModel, State* state, Configuration* config)
 // Build the velocity model corresponding to the parameters of the state : this will have to be change each time we change the problem.
 {
   std::vector<double> filteredProfileP;
-  InverseWaveletTransform(&filteredProfileP,&(state->params), config, false); // Calculate the P waves velocity profile corresponding to the wavelet coefficients (nz-1 points)
+  if (config->waveletParameterization)
+    InverseWaveletTransform(&filteredProfileP,&(state->params), config, false); // Calculate the P waves velocity profile corresponding to the wavelet coefficients (nz-1 points)
+  else
+    InverseLayerTransform(&filteredProfileP,&(state->params), config, false); // Calculate the P waves velocity profile corresponding to the layers coefficients (nz-1 points)
   std::vector<double> downSampledPvel = downSampleProfile(filteredProfileP,config->data.zp,config->data.zFiltp); // downSampledPvel Contains the down sampled filtered velocity model !! It will have a size nzFilt-1
   for(int i=0; i < (int)downSampledPvel.size(); i++) {
     if(downSampledPvel[i]<=0.0) // A velocity can't be < 0 ! If it is the case...
@@ -138,7 +192,10 @@ void makeVel(VelocityModel* velModel, State* state, Configuration* config)
   meshing(&downSampledPvel,velModel,false); // Extend this profile on the whole mesh
   if(config->swaves) {
     std::vector<double> filteredProfileS;
-    InverseWaveletTransform(&filteredProfileS,&(state->params), config, true); // Calculate the S waves velocity profile corresponding to the wavelet coefficients
+    if (config->waveletParameterization)
+      InverseWaveletTransform(&filteredProfileS,&(state->params), config, true); // Calculate the S waves velocity profile corresponding to the wavelet coefficients (nz-1 points)
+    else
+      InverseLayerTransform(&filteredProfileS,&(state->params), config, true); // Calculate the S waves velocity profile corresponding to the layers coefficients (nz-1 points)
     std::vector<double> downSampledSvel = downSampleProfile(filteredProfileS,config->data.zp,config->data.zFiltp); // downSampledSvel Contains the down sampled filtered velocity model !! It will have a size nzFilt-1
     for(int i=0; i < (int)downSampledSvel.size(); i++) {
       if(downSampledSvel[i]<=0.0) // A velocity can't be < 0 ! If it is the case...

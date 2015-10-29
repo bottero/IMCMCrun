@@ -125,7 +125,6 @@ typedef struct{       // To store data characteristics
   std::vector<double> zFiltp;            // Corresponding depths (size nzFilt-1)
   std::vector<double> minParameters;     // Minimum for each parameter
   std::vector<double> maxParameters;     // Maximum for each parameter
-  std::vector<int> indexParameters;      // The params[i] refer to the wavelet coefficient number indexParameters[i] of the decomposition of the profiles 
   std::vector<int> staticParameters;     // Indexes of the non varying parameters : Some parameters can be fixed to a value to reduce the dimension
   double Ep;                             // Energy of the prior
   double sigmaP;                         // Standard deviation of the P arrival times picked
@@ -143,6 +142,8 @@ typedef struct{       // To store data characteristics
   double xminGrid;                       // minimum of x coordinate
   double yminGrid;                       // minimum of y coordinate
   double zminGrid;                       // minimum of z coordinate
+  // For wavelet parameterization:
+  std::vector<int> indexParameters;      // The params[i] refer to the wavelet coefficient number indexParameters[i] of the decomposition of the profiles
 }Data;
 
 typedef struct{       // To store the configuration of the run
@@ -180,7 +181,15 @@ typedef struct{       // To store the configuration of the run
   std::string name_of_first_guess_S_file;
   /************Quantile Options***************/
   double qp;                                // Ratio of the values on the quantile chosen (ex : 0.95 -> 95%)
+  /************Parameterization variables*****/
+  int waveletParameterization; // If set to 1 the program will use a parameterization based on wavelets. Otherwise it uses a layer based parameterization
+  /************Layer variables**************/
+  double ztop;
+  double zbottom;
+  std::vector<double> zStepCenter;
+  std::vector<int> indices; // indices of the zp values that correspond to layers boundaries
   /************Wavelet variables**************/
+  int keep_first_values; // Keep NPU biggest coefficients of the first guess and perturbate them of keep the first NPU coeff
   std::string wavelet;                           // Wavelet used for the wavelet based filering
   int ndwts;                                    // Number of DWT stages for the wavelet transform
   std::vector<double> coeffsP, flagP;       // For the wavelet transform (coeffsP is used to store temporary coefficients)

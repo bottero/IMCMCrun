@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <iomanip>      // std::setprecision
 #include <algorithm>    // std::min_element, std::max_element
+#include <numeric>      // accumulate
 #include "rvgs.h"
 #include "rngs.h"
 #include "defines.h"
@@ -122,6 +123,10 @@ void readConfFile(std::string nameOfConfFile, Configuration* config)
       config->df = atof(iter->second.c_str());
     if (iter->first == "QP")
       config->qp = atof(iter->second.c_str());
+    if (iter->first == "WAVELET_PARAMETERIZATION")
+      config->waveletParameterization = atoi(iter->second.c_str());
+    if (iter->first == "KEEP_FIRST_VALUES")
+      config->keep_first_values = atoi(iter->second.c_str());
     if (iter->first == "NAME_OF_REAL_PROFILE_FILE_P")
       config->name_of_real_profile_P = iter->second;
     if (iter->first == "NAME_OF_REAL_PROFILE_FILE_S")
@@ -391,10 +396,14 @@ void loadPriorFeatures(Configuration* config)
       std::stringstream sline(line);
       int idx;  // The params[i] refer to the wavelet coefficient number idx of the profile
       double mini,maxi;
-      sline >> idx >> mini >> maxi ;
+      if (config->waveletParameterization)
+        sline >> idx >> mini >> maxi ;
+      else
+        sline >> mini >> maxi ;
       config->data.minParameters.push_back(mini);
       config->data.maxParameters.push_back(maxi);
-      config->data.indexParameters.push_back(idx);
+      if (config->waveletParameterization)
+        config->data.indexParameters.push_back(idx);
     }
   }
   file.close();
@@ -409,6 +418,94 @@ void loadPriorFeatures(Configuration* config)
   config->data.Ep=log(Ep);
   if (config->verbose1 && config->mpiConfig.rank == 0)
     std::cout << "  Prior features loaded" << std::endl;
+}
+
+void findOptimumFirstGuessParameterization(Configuration* config)
+// From the first guess velocity profile(s) and given the parameterization scheme (store in config), determine the best set of
+// coefficients describing it. Store it in config->coeffsP (and in config->coeffsS). Then store the corresponding parameterized profile
+// in config->data.filtFirstGuessP (and in config->data.filtFirstGuessS).
+{
+  if (config->waveletParameterization) {
+    // ******** DISCRETE WAVELET TRANSFORM IMPLEMENTATION*********"
+    // Performing Non Linear Approximation by using only config->npu most significant coefficients
+    // Coefficients in config->coeffsP (or config->coeffsS) are stored as following
+    // config->coeffsP =[Appx(J-1) Detail(J-1) Detail(J-2) .... Detail(0)]
+    dwt(config->data.firstGuessP, config->ndwts, config->wavelet, config->coeffsP,config->flagP, config->lengthP); // Performs J-Level DWT
+    if (config->keep_first_values != 1)
+      keepNsignificantValues(&config->coeffsP,config->npu); // Keep the N biggest absolute values in vector. Put the others to 0
+    else
+      keepNfirstValues(&config->coeffsP,config->npu); // Keep the N biggest absolute values in vector. Put the others to 0
+    idwt(config->coeffsP,config->flagP,config->wavelet,config->data.filtFirstGuessP,config->lengthP);  // Performs IDWT with approximated coefficients
+    if (config->swaves) {
+      // ******** DISCRETE WAVELET TRANSFORM IMPLEMENTATION*********"
+      dwt(config->data.firstGuessS, config->ndwts, config->wavelet, config->coeffsS,config->flagS, config->lengthS); // Performs J-Level DWT
+      if (config->keep_first_values != 1)
+        keepNsignificantValues(&config->coeffsS,config->npu); // Keep the N biggest absolute values in vector. Put the others to 0
+      else
+        keepNfirstValues(&config->coeffsS,config->npu); // Keep the N biggest absolute values in vector. Put the others to 0
+      idwt(config->coeffsS,config->flagS,config->wavelet,config->data.filtFirstGuessS,config->lengthS);  // Performs IDWT with approximated coefficients
+    }
+  }
+  else { // Layer based parameterization
+                                                                // zbottom z0   z1  ...    zNPU-2  ztop
+    double dzNPU = (config->zbottom - config->ztop)/config->npu;//    |    o    o   ...       o    |     --> zbottom - ztop = (NPU-2)dz+2dz
+                                                                //     <dz> <dz>               <dz>
+    std::vector<double> zLayers,optimumZlayers,vp,vs;
+    // Compute the first point :
+    optimumZlayers.push_back(config->ztop+dzNPU);
+    config->indices.push_back(closest(config->data.zp,optimumZlayers.back()));
+    zLayers.push_back(config->data.zp[config->indices[0]]); // Value closest of z0 in zp
+    // Construct vTemp from subrange in firstGuessP :
+    std::vector<double> vTemp(config->data.firstGuessP.begin(), config->data.firstGuessP.begin() + config->indices[0]); // Extract the elements corresponding to first layer
+    double meanValue = std::accumulate(vTemp.begin(), vTemp.end(), 0.0)/vTemp.size(); // Compute their mean value
+    config->coeffsP.push_back(meanValue); // Store it in coeffsP
+    // Build z values for each layer
+    for(int i=1;i<config->npu-1;i++) {
+      optimumZlayers.push_back(optimumZlayers[i-1]+dzNPU);
+      config->indices.push_back(closest(config->data.zp,optimumZlayers.back()));
+      zLayers.push_back(config->data.zp[config->indices.back()]);
+      // Construct vTemp2 from subrange in firstGuessP :
+      std::vector<double> vTemp2(config->data.firstGuessP.begin()+config->indices[i-1], config->data.firstGuessP.begin() + config->indices[i] + 1); // Extract the elements corresponding to ith layer
+      meanValue = std::accumulate(vTemp2.begin(), vTemp2.end(), 0.0)/vTemp2.size(); // Compute their mean value
+      config->coeffsP.push_back(meanValue); // Store it in coeffsP
+    }
+    // Construct vTemp from subrange in firstGuessP :
+    std::vector<double> vTemp3(config->data.firstGuessP.begin()+config->indices[config->npu-2], config->data.firstGuessP.end()); // Extract the elements corresponding to ith layer
+    meanValue = std::accumulate(vTemp3.begin(), vTemp3.end(), 0.0)/vTemp3.size(); // Compute their mean value
+    config->coeffsP.push_back(meanValue); // Store it in coeffsP
+    for(unsigned int i=0;i<zLayers.size();i++)
+      config->zStepCenter.push_back(zLayers[i] - dzNPU/2.0);
+    config->zStepCenter.push_back(zLayers.back()+dzNPU/2.0);
+    // Store the filtered profile:
+    InverseLayerTransform(&config->data.filtFirstGuessP,&(config->coeffsP), config, false);
+    if (config->verbose1 && config->mpiConfig.rank == 0) {
+      for(unsigned int i=0;i<config->coeffsP.size();i++)
+        std::cout << "zStepCenter[" << i << "]: " << config->zStepCenter[i] << " config->coeffsP[" << i << "] :" << config->coeffsP[i] << std::endl;
+    }
+    if (config->swaves) {
+      // Construct vTemp from subrange in firstGuessS :
+      std::vector<double> vTemp4(config->data.firstGuessS.begin(), config->data.firstGuessS.begin() + config->indices[0]); // Extract the elements corresponding to first layer
+      double meanValue = std::accumulate(vTemp4.begin(), vTemp4.end(), 0.0)/vTemp4.size(); // Compute their mean value
+      config->coeffsS.push_back(meanValue); // Store it in coeffsS
+      // Build z values for each layer
+      for(int i=1;i<config->npu-1;i++) {
+        // Construct vTemp from subrange in firstGuessS :
+        std::vector<double> vTemp5(config->data.firstGuessS.begin()+config->indices[i-1], config->data.firstGuessS.begin() + config->indices[i] + 1); // Extract the elements corresponding to ith layer
+        meanValue = std::accumulate(vTemp5.begin(), vTemp5.end(), 0.0)/vTemp5.size(); // Compute their mean value
+        config->coeffsS.push_back(meanValue); // Store it in coeffsS
+      }
+      // Construct vTemp from subrange in firstGuessS :
+      std::vector<double> vTemp6(config->data.firstGuessS.begin()+config->indices[config->npu-2], config->data.firstGuessS.end()); // Extract the elements corresponding to ith layer
+      meanValue = std::accumulate(vTemp6.begin(), vTemp6.end(), 0.0)/vTemp6.size(); // Compute their mean value
+      config->coeffsS.push_back(meanValue); // Store it in coeffsS
+      if (config->verbose1 && config->mpiConfig.rank == 0) {
+        for(unsigned int i=0;i<config->coeffsS.size();i++)
+          std::cout << "zStepCenter[" << i << "]: " << config->zStepCenter[i] << " config->coeffsS[" << i << "] :" << config->coeffsS[i] << std::endl;
+      }
+      // Store the filtered profile:
+      InverseLayerTransform(&config->data.filtFirstGuessS,&(config->coeffsS), config, true);
+    }
+  }
 }
 
 void loadFirstGuesses(Configuration* config)
@@ -432,7 +529,6 @@ void loadFirstGuesses(Configuration* config)
       config->data.zpFirstGuess.push_back(zpFirstGuess);
     }
   }
-
   config->data.zp = config->data.zpFirstGuess; // In fact these two vectors are equal even for an analytical run but we need to declare it.
   if (config->data.zp[1] > config->data.zp[0])
     config->data.dz = config->data.zp[1]-config->data.zp[0];
@@ -440,24 +536,6 @@ void loadFirstGuesses(Configuration* config)
     std::cout << "By now z must point downwards. Terminating..." << std::endl;
     exit(0);
   } 
-  // Build z : it will contains the z positions of the cells borders
-  config->data.z.push_back(config->data.zp[0]-config->data.dz/2.0); // Compute the first point
-  if (fabs(config->data.z[0]) < TINYVAL)
-    config->data.z[0] = TINYVAL;
-  for(int i=1;i<(int)config->data.zp.size()+1;i++)
-    config->data.z.push_back(config->data.z[i-1]+config->data.dz);
-  fileP.close();
-  config->data.nz=config->data.z.size();
-  // ******** DISCRETE WAVELET TRANSFORM IMPLEMENTATION*********"
-  // Performing Non Linear Approximation by using only config->npu most significant coefficients
-  // Coefficients in config->coeffsP (or config->coeffsS) are stored as following
-  // config->coeffsP =[Appx(J-1) Detail(J-1) Detail(J-2) .... Detail(0)]
-  dwt(config->data.firstGuessP, config->ndwts, config->wavelet, config->coeffsP,config->flagP, config->lengthP); // Performs J-Level DWT
-  keepNsignificantValues(&config->coeffsP,config->npu); // Keep the N biggest absolute values in vector. Put the others to 0
-  idwt(config->coeffsP,config->flagP,config->wavelet,config->data.filtFirstGuessP,config->lengthP);  // Performs IDWT with approximated coefficients
-  if (config->mpiConfig.rank == 0)     // (In case of parallel implementation just one process has to create files)
-    write_two_columns_file(&config->data.zp,&config->data.filtFirstGuessP, config->outputDir+"filteredFirstGuessP."+config->code+".dat");
- 
   if(config->swaves) {
     std::string firstGuessS(config->filesDir+config->name_of_first_guess_S_file);
     std::ifstream fileS(firstGuessS.c_str());
@@ -487,18 +565,33 @@ void loadFirstGuesses(Configuration* config)
       std::cout << "First guess P and S waves velocities don't have the same number of points. Terminating..." << std::endl;
       exit(0);
     }
-    // ******** DISCRETE WAVELET TRANSFORM IMPLEMENTATION*********"
-    dwt(config->data.firstGuessS, config->ndwts, config->wavelet, config->coeffsS,config->flagS, config->lengthS); // Performs J-Level DWT
-    keepNsignificantValues(&config->coeffsS,config->npu); // Keep the N biggest absolute values in vector. Put the others to 0
-    idwt(config->coeffsS,config->flagS,config->wavelet,config->data.filtFirstGuessS,config->lengthS);  // Performs IDWT with approximated coefficients
-    if (config->mpiConfig.rank == 0)  // (In case of parallel implementation just one process has to create files)
-      write_two_columns_file(&config->data.zp,&config->data.filtFirstGuessS, config->outputDir+"filteredFirstGuessS."+config->code+".dat");
-    if (config->verbose1 && config->mpiConfig.rank == 0)
-      std::cout << "  First guess files loaded (and wavelet transform performed)" << std::endl;
   }
-  else
-    if (config->verbose1 && config->mpiConfig.rank == 0)
-      std::cout << "  First guess file loaded (and wavelet transform performed)" << std::endl;
+  // Build z : it will contains the z positions of the cells borders
+  config->data.z.push_back(config->data.zp[0]-config->data.dz/2.0); // Compute the first point
+  if (fabs(config->data.z[0]) < TINYVAL)
+    config->data.z[0] = TINYVAL;
+  for(int i=1;i<(int)config->data.zp.size()+1;i++)
+    config->data.z.push_back(config->data.z[i-1]+config->data.dz);
+  fileP.close();
+  config->data.nz=config->data.z.size();
+  config->ztop=config->data.zp[0];
+  config->zbottom=config->data.zp.back();
+
+  findOptimumFirstGuessParameterization(config); // From the first guess velocity profile(s) and given the parameterization scheme
+  // (store in config), determine the best set of coefficients describing it. Store it in config->coeffsP (and config->coeffsS).
+  // Then store the corresponding parameterized profile in config->data.filtFirstGuessP (config->data.filtFirstGuessS).
+
+  if (config->mpiConfig.rank == 0) {    // (In case of parallel implementation just one process has to create files)
+    write_two_columns_file(&config->data.zp,&config->data.filtFirstGuessP, config->outputDir+"filteredFirstGuessP."+config->code+".dat");
+    if (config->swaves) {
+      write_two_columns_file(&config->data.zp,&config->data.filtFirstGuessS, config->outputDir+"filteredFirstGuessS."+config->code+".dat");
+      if (config->verbose1)
+        std::cout << "  First guess files loaded (and optimum filtering performed)" << std::endl;
+    }
+    else
+      if (config->verbose1)
+        std::cout << "  First guess file loaded (and optimum filtering performed)" << std::endl;
+  }
 }
 
 void loadRealProfiles(Configuration* config)
@@ -591,36 +684,50 @@ void loadData(Configuration* config)
 }
 
 void buildPrior(Configuration* config)
+// If wavelet parameterization :
 // Record the most significant coefficients of the filtered first guess profiles in config->data.indexParameters
 // define their maximum variation ranges (config->data.minParameters, config->data.maxParameters) during the rest of the algorithm.
 // Calculate prior energy.
 {
   if (config->verbose1 && config->mpiConfig.rank == 0)
     std::cout << "Building the a priori space..." << std::endl;
-  for (unsigned int i = 0; i < config->coeffsP.size(); i++) { // Loop on the P coeffs
+  for (unsigned int i = 0; i < config->coeffsP.size(); i++) { // Loop on the P coeffs of first guess
     if (fabs(config->coeffsP[i]) > 0) {
       config->data.maxParameters.push_back((1.0+sign(config->coeffsP[i])*config->A)*config->coeffsP[i]);
-      config->data.minParameters.push_back((1.0-sign(config->coeffsP[i])*config->A)*config->coeffsP[i]);
-      config->data.indexParameters.push_back((int)i);
+      if (not config->waveletParameterization and (1.0-sign(config->coeffsP[i])*config->A)*config->coeffsP[i] < 0)
+        config->data.minParameters.push_back(TINYVAL); // If layer parameterization the parameters are velocities and can't be negative
+      else
+        config->data.minParameters.push_back((1.0-sign(config->coeffsP[i])*config->A)*config->coeffsP[i]);
+      if (config->waveletParameterization)
+        config->data.indexParameters.push_back((int)i);
     }
   }
   if (config->swaves) {
     for (unsigned int i = 0; i < config->coeffsS.size(); i++) { // Loop on the S coeffs
       if (fabs(config->coeffsS[i]) > 0) {
         config->data.maxParameters.push_back((1.0+sign(config->coeffsS[i])*config->A)*config->coeffsS[i]);
-        config->data.minParameters.push_back((1.0-sign(config->coeffsS[i])*config->A)*config->coeffsS[i]);
-        config->data.indexParameters.push_back((int)i);
+        if (not config->waveletParameterization and (1.0-sign(config->coeffsS[i])*config->A)*config->coeffsS[i] < 0)
+          config->data.minParameters.push_back(TINYVAL); // If layer parameterization the parameters are velocities and can't be negative
+        else
+          config->data.minParameters.push_back((1.0-sign(config->coeffsS[i])*config->A)*config->coeffsS[i]);
+        if (config->waveletParameterization)
+          config->data.indexParameters.push_back((int)i);
       }
     }
   }
-  if (config->mpiConfig.rank == 0)
-    write_three_columns_file(&config->data.indexParameters,&config->data.minParameters, &config->data.maxParameters,config->outputDir+"priorFeatures."+config->code+".dat");
-  
+  if (config->mpiConfig.rank == 0) {
+    if (config->waveletParameterization)
+      write_three_columns_file(&config->data.indexParameters,&config->data.minParameters, &config->data.maxParameters,config->outputDir+"priorFeatures."+config->code+".dat");
+    else
+      write_two_columns_file(&config->data.minParameters, &config->data.maxParameters,config->outputDir+"priorFeatures."+config->code+".dat");
+  }
+
   double Ep=1.0;
   for(int i=0;i<(int)config->data.minParameters.size();i++) // Loop on the parameters to calculate the prior probability
-    Ep*=fabs(config->data.maxParameters[i]-config->data.minParameters[i]);
+    Ep*=fabs(config->data.maxParameters[i]-config->data.minParameters[i]); // TODO: verify that for layer based parameterization
   config->data.Ep=log(Ep);
-  // Important! We use these vectors in InverseWaveletTransform to store the coefficient (that is stupid by the way...) TODO :
+  // Important! We use these vectors in InverseWaveletTransform to store the coefficients (that is stupid by the way...) so we
+  // put it here back to zero TODO :
   for(int i=0;i<(int)config->coeffsP.size();i++) 
     config->coeffsP[i]=0.0; 
   for(int i=0;i<(int)config->coeffsS.size();i++) 
@@ -642,7 +749,7 @@ void generate_profiles_from_prior(Configuration* config)
     std::vector<double> priorProfileP, priorProfileS;
     if (config->verbose2 && config->mpiConfig.rank == 0)
       std::cout << "  Profile " << i+1 << " :" << std::endl;
-    for(int j=0;j<(int)config->data.indexParameters.size();j++) {  // Loop on the number of parameters that we will modify
+    for(int j=0;j<(int)config->data.minParameters.size();j++) {  // Loop on the number of parameters that we will modify
       params.push_back(Uniform(config->data.minParameters[j],config->data.maxParameters[j]));
       if (config->verbose2 && config->mpiConfig.rank == 0) {
         std::cout<< "  params["<< j <<"] : " << params[j] << "   ";
@@ -651,9 +758,16 @@ void generate_profiles_from_prior(Configuration* config)
     }
     if (config->verbose2 && config->mpiConfig.rank == 0)
       std::cout << std::endl;
-    InverseWaveletTransform(&priorProfileP,&params, config, false); // Calculate the P waves velocity profile corresponding to the wavelet coefficients
-    if(config->swaves)
-      InverseWaveletTransform(&priorProfileS,&params, config, true); // Calculate the S waves velocity profile corresponding to the wavelet coefficients
+    if (config->waveletParameterization)
+      InverseWaveletTransform(&priorProfileP,&params, config, false); // Calculate the P waves velocity profile corresponding to the wavelet coefficients
+    else
+      InverseLayerTransform(&priorProfileP,&params, config, false); // Calculate the P waves velocity profile corresponding to the layer coefficients
+    if(config->swaves) {
+      if (config->waveletParameterization)
+        InverseWaveletTransform(&priorProfileS,&params, config, true); // Calculate the S waves velocity profile corresponding to the wavelet coefficients
+      else
+        InverseLayerTransform(&priorProfileS,&params, config, true); // Calculate the S waves velocity profile corresponding to the wavelet coefficients
+    }
     std::string mkdir_command="mkdir -p "+config->outputDir+"priorProfiles"+config->code+"/";
     int status;
     if (config->mpiConfig.rank == 0) {

@@ -26,6 +26,10 @@ void loadShotsPositions(Configuration* config);
 // Load the sources positions contained on the file coordShots.txt
 void loadPriorFeatures(Configuration* config);
 // Load parameters features (min, max, amplitude of variation) contained on the file priorFeatures.txt
+void findOptimumFirstGuessParameterization(Configuration* config);
+// From the first guess velocity profile(s) and given the parameterization scheme (store in config), determine the best set of
+// coefficients describing it. Store it in config->coeffsP (and in config->coeffsS). Then store the corresponding parameterized profile
+// in config->data.filtFirstGuessP (and in config->data.filtFirstGuessS).
 void loadFirstGuesses(Configuration* config);
 // Load first guesses on files falseFirstGuessP4096.txt, falseFirstGuessS4096.txt. Perform the discrete wavelet transform and store the results in config
 // Must be done after loading priorFeatures.txt 
