@@ -97,7 +97,48 @@ This is done as below :  !! Warning in c++ indices start at 0 (to nz-1) !!
   z[nz] -        zFilt[nzFilt] -            v
  
  
- The value of the velocity in each interval of the filtered profile is interpolated. 
+ The value of the velocity in each interval of the filtered profile is interpolated.
+ 
+PARAMETERIZATION
+================
+
+The objective of the program is to explore the parameter space: {P=(p0,p1,...,pN)}. These parameters describing a velocity profile:
+
+                                               velocity profile = parameterization(P)
+
+There are two possibilities in this program. 
+  _If waveletParameterization is set to 0 the program uses a layer based parameterization:
+      If SWAVES calculated:
+        P=(vp0,vp1, ... ,vpNPU-1,vs0,vs1,...,vsNPU-1) --> Hence the dimension of the problem is: 2*NPU
+      Otherwise:
+        P=(vp0,vp1, ... ,vpNPU-1) --> Hence the dimension of the problem is: NPU
+      Where NPU is given in the configuration file.
+      
+      The setting is as following:
+      
+      ZTOP ---------------  (ZTOP is given, it is not a parameter)
+               vp0,vs0
+       z1  ---------------
+               vp1,vs1
+       z2  ---------------
+               vp2,vs2
+       z3  ---------------
+                 ...
+    zNPU-1 ---------------
+             vpNPU-1,vsNPU-1
+   zBOTTOM ---------------  (ZBOTTOM > ZTOP is given, it is not a parameter)
+   
+   z1,z2... are calculated from ZTOP,ZBOTTOM and NPU
+      
+  _If waveletParameterization is set to 1 the program uses a parameterization based on wavelet transform. In this cases P is a set
+   of wavelet coefficients, the profile is obtained by inverse wavelet transform:
+      If SWAVES calculated:
+        P=(coeffsP0,coeffsP1, ... ,coeffsPNPU-1,coeffsS0,coeffsS1, ... ,coeffsSNPU-1)  --> Hence the dimension of the problem is: 2*NPU
+      Otherwise:
+        P=(coeffsP0,coeffsP1, ... ,coeffsPNPU-1)  --> Hence the dimension of the problem is: NPU
+   Each wavelet coefficients is associated with an index. These indices are determined by filtering the first guess velocity profiles.
+   Then -> if KEEP_FIRST_VALUES = 1 we keep the indices of the NPU biggest coefficients
+        -> if KEEP_FIRST_VALUES = 0 we keep the NPU first indices
  
 FILES CREATED BY THE PROGRAM
 ============================
@@ -152,20 +193,20 @@ _varPI.XXX.dat : variance of P wave velocity with depth for chain I
 
 _varSI.XXX.dat : variance of S wave velocity with depth for chain I
 
-_qInfPI.XXX.dat :
+_qInfPI.XXX.dat : inferior value of the quantile calculated for P wave velocities and chain I
 
-_qInfSI.XXX.dat :
+_qInfSI.XXX.dat : inferior value of the quantile calculated for S wave velocities and chain I
 
-_qSupPI.XXX.dat :
+_qSupPI.XXX.dat : superior value of the quantile calculated for P wave velocities and chain I
 
-_qSupSI.XXX.dat :
+_qSupSI.XXX.dat : superior value of the quantile calculated for S wave velocities and chain I
 
 TIPS
 ====
 
 _If you want to run the program again you don't need to compile it again, just edit the file run_that_example.sh : MAKEALL='no'
 _To delete all file created but not OUTPUT_FILES : "make clean", to delete everything "make purge"
-_If there is a bug first thing to do : VERBOSE1=1 and VERBOSE2 = 1 in .cfg file
+_If there is a bug the first thing to do is to set VERBOSE1=1 and VERBOSE2 = 1 in .cfg file
 _If you stop a run before it ends you can still analyse the first results
                                
 WARNINGS
@@ -186,8 +227,9 @@ TODO
 ====
 
 How to make this code better : _Improve this README file
+                               _Add a comment line at the beginning of each file written explaining what it is
                                _Improve eik3d
-                               _Put TRESH (file and control) in .cfg file
+                               _Put TRESH (files_and_control) in .cfg file
                                _NXREF NYREF for find optimum grid !!
                                _Remove system commands
                                _Replace exit commands by custom_exit (create that function taking MPI into account. It could create a file. Put the "terminating" messages on it)
@@ -200,7 +242,7 @@ How to make this code better : _Improve this README file
                                _Make first guess curves optionnal
                                _Parallelize on chains
                                _Add an estimation of the final time (function printEvolution)
-                               _While we give Configuration* to every function we could create a Singleton
+                               _While we give Configuration* to every function we should create a Singleton
                                _To avoid if(config->verbose1 && config->mpiConfig.rank == 0) everywhere we might redefine std::cout?
                                _Use FTeik2D for 2D problems and a simple calculation (t=d/v) for 1D problems.
                                _Write "Mean differences at the receivers between big run and that run for shot number "<< shotNumber << " : "  << averageDiffs[min_index] on a file
@@ -209,6 +251,6 @@ How to make this code better : _Improve this README file
                                _Completer le fichier config       
                                _In build prior calculate Tmax        
                                _Script redoThatRun.sh XXX -> copy files, par_file, seed...
-                               _Write all file with c++ fashion (filesAndControl.cpp)
+                               _Write all files with c++ fashion (filesAndControl.cpp)
                                _Record min and max velocity values after a given iteration
 
