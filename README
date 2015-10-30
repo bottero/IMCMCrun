@@ -208,6 +208,9 @@ _If you want to run the program again you don't need to compile it again, just e
 _To delete all file created but not OUTPUT_FILES : "make clean", to delete everything "make purge"
 _If there is a bug the first thing to do is to set VERBOSE1=1 and VERBOSE2 = 1 in .cfg file
 _If you stop a run before it ends you can still analyse the first results
+_If you want to run EXACTLY the same example (to calculate more iterations for example) let say it is the run number XXX. Copy the
+seed at the beginning of the file config.XXX.dat then use the same cfg file but turning USE_DEFAULT_SEED to 1 and pasting the seed
+in DEFAULT_SEED. The parameters of the run must remain the same (but you can display more details, write files...)
                                
 WARNINGS
 ========
