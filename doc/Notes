@@ -1,0 +1,36 @@
+Je viens de constater quelque chose : FTeik ne relocalise pas les sources... Supposons qu'en x,y et z on ait des points en 0.0m, 1.0m, 2.0m, 3.0m et 4.0m et que la source soit en : (xsin=2.2,ysin=2.0,zsin=2.0). Après avoir fait tourner l'eikonal si on regarde en (xin=2.2,yin=2.0,zin=2.0) avec la routine GetTime on obtient pas un tval=0s (Si la vitesse est 1m/s tval=0.32s). L'erreur est d'autant plus grande que la source est loin d'un point du maillage. L'effet s'en ressent sur les inversions que je fais. En soit c'est évident mais je pensais jusqu'à maintenant qu'il y avait une espèce d'interpolation du même type que dans getTime pour la source aussi. Ça devrait être possible c'est ce qui est fait dans le logiciel d’éléments spectraux SPECFEM de Dimitri sur lequel je travaille.
+
+Est-il possible de faire quelque chose ou doit-on travailler avec ces décalages?
+
+Merci à toi
+
+================================================================================================================================================
+
+Déjà il faut que tu utilise le script buildCoeffs.py
+
+Exemple :
+python buildCoeffs.py -f IMCMCrun/OUTPUT_EXAMPLES/homoSynth/chain0.820.dat -p IMCMCrun/OUTPUT_EXAMPLES/homoSynth/priorFeatures.820.dat -n 512 -m 235
+
+Cette commande construit les fichiers ./chain0.820.Pcoeffs235.dat et ./chain0.820.Scoeffs235.dat contenant le jeu complet de coefficients au bon endroit (et avec les zeros) pour le modéle 235 généré par la chaine 0 d'un des runs d'exemple. Il faut lui donner prirorFeatures.820.dat pour qu'il connaisse les indices des coefficients. Lit la doc de ce script.
+J'ai retesté ça marche bien.
+
+Une fois que tu as fait ça récupère les fichiers crées chain0.820.Pcoeffs235.dat et chain0.820.Scoeffs235.dat plus deux courbes du prior dans le dossier IMCMCrun/OUTPUT_EXAMPLES/ : priorProfileP.820.0.dat, priorProfileS.820.0.dat y'en a besoin pour après.
+
+Ensuite il faut passer par le deuxième programme coeffsToProfile que je t'envoie qui fait la transformée inverse à partir de ce jeu de coefficients. Il faut que tu le décompresse, ensuite tu vas dans le dossier src et tu édite les lignes suivantes du fichier define.h :
+
+#define FILES_DIR "/home/gesret/coeffsToProfile/"  // Path to the directory that contains the first guess profiles.
+// First guess profiles (for now they are needed to calculate a flag I don't understand) :
+#define FIRST_GUESS_P "priorProfileP.820.0.dat" // FILES_DIR/FIRST_GUESS_P
+#define FIRST_GUESS_S "priorProfileS.820.0.dat"
+#define NDWTS 20 // Number of DWT Stages for the waveletTransform
+#define WAVELET "haar" // Wavelet used
+
+ensuite
+
+make totalClean
+make
+cd ..
+./src/coeffsToProfile chain0.820.Pcoeffs235.dat
+
+ça te crée le fichier chain0.820.Pcoeffs235Profile.dat qui contient le profile de vitesse!
+
