@@ -53,8 +53,9 @@ int main( int argc, char *argv[]) // argc : Number of arguments, argv : the argu
         else                                                // _with probability pee we suggest an IR-swap.
           importanceSamplingSwap(&run,i,&config);           // ImportanceSamplingSwap
       }
-      updateAverageProfiles(run.chains[i],&config,n+1);  // Update the average, variance and quantiles profiles (n+1 because we have to count the profile created during initialization)
+      // updateAverageProfiles(run.chains[i],&config,n+1);  // Old version: Update the average, variance and quantiles profiles (n+1 because we have to count the profile created during initialization)
     }
+    updateAverageProfiles(&run,&config,n+1);  // Update the average, variance and quantiles profiles (n+1 because we have to count the profile created during initialization)
     updateSCI(&run,n);          // Add a new line to SCI (importance weights (cumulative sum) and normalization coefficients)
     writeFiles(&run,&config,n); // Write informations on files
   }

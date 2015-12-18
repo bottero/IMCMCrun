@@ -13,12 +13,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
-
+#include <mpfr.h>
 #include "defines.h"
 #include "tab3d.hpp"
 
 typedef struct{       // To store a Markov chain state
   std::vector<double> params;                // To store the parameters that describe the state
+  int wavelet;                               // Wavelet index
   double E;                                  // To store the energy E of the state
 }State;
 
@@ -33,7 +34,7 @@ typedef struct{       // To store a Markov chain
   int ps;                                   // Number of proposed swaps
   int as;                                   // Number of accepted swaps
   int rs;                                   // Number of rejected swaps
-  std::vector<double> deltaParameters;      // Maximum amplitude of variation for each parameter
+  std::vector<std::vector<double> > deltaParameters;  // Maximum amplitude of variation for each parameter
   std::vector<double> accProba;             // Instantaneous acceptance probability
   std::vector<double> swapProba;            // Instantaneous swapping probability
   std::vector<std::vector<double> > profilesP;   // To keep the profiles and compute the quantiles 
@@ -45,6 +46,13 @@ typedef struct{       // To store a Markov chain
   // Ex : profilesP[15] is a vector of size "n" that contains the history of the P wave velocity at the point 15 of the profile
   std::vector<double> averageP, varP, qInfP, qSupP; // To save the medium value of P wave velocity, the variance and the quantiles
   std::vector<double> averageS, varS, qInfS, qSupS; // To save the medium value of S wave velocity, the variance and the quantiles
+  mpfr_t sumOfweights; // Used to calculate global average and variance
+  std::vector<double> weightedAverageP,weightedAverageS; // Used to calculate global averages
+  mpfr_t* dotProductP; // Used to calculate global averages
+  mpfr_t* dotProductS; // Used to calculate global averages
+  std::vector<double> weightedVarP, weightedVarS; // Used to calculate global variances
+  mpfr_t* dotProductVarP; // Used to calculate global variances
+  mpfr_t* dotProductVarS; // Used to calculate global variances
 }Chain;
 
 typedef struct{       // To store the features of a swap
@@ -61,6 +69,9 @@ typedef struct{       // To store parallel Markov chains
   std::vector<double> maxS;                 // To keep maximum S wave velocity values investigated by the algorithm
   std::vector<double> minP;                 // To keep minimum P wave velocity values investigated by the algorithm
   std::vector<double> minS;                 // To keep minimum S wave velocity values investigated by the algorithm
+  std::vector<double> averageP, averageS;   // To keep the global mean model
+  std::vector<double> varP, varS;           // To keep the global variance
+  // std::vector<double> qInfP, qSupP, qInfS, qSupS; // To keep the global quantiles TODO
   std::vector<int> idxE;  // To keep indices of best models
   std::vector<double> bestE;  // To keep energies of best models
   std::vector<int> chainBestE;  // To keep best models chains
@@ -114,8 +125,8 @@ typedef struct{       // To store data characteristics
   std::vector<Coordinate> coordShots;    // Coordinates of the shots
   std::vector<double> firstGuessP;       // FirstGuess for P waves (size nz-1)
   std::vector<double> firstGuessS;       // FirstGuess for S waves (size nz-1)
-  std::vector<double> filtFirstGuessP;          // Filtered First guess for P waves velocity (size nz-1)
-  std::vector<double> filtFirstGuessS;          // Filtered First guess for S waves velocity (size nz-1)
+  std::vector<std::vector<double> > filtFirstGuessP; // Filtered First guess for P waves velocity (size nz-1)
+  std::vector<std::vector<double> > filtFirstGuessS; // Filtered First guess for S waves velocity (size nz-1)
   std::vector<double> zpFirstGuess;             // Corresponding depths (size nz-1)
   std::vector<double> realP;             // If ANALYTICAL_RUN == 1 store the real P profile (size nz-1)
   std::vector<double> realS;             // Idem for real S profile (size nz-1)
@@ -123,8 +134,8 @@ typedef struct{       // To store data characteristics
   std::vector<double> z;                 // Corresponding border depths (size nz)
   std::vector<double> zFilt;             // Depths for filtered profiles (we need less points to describe the filtered profiles properly) (size nzFilt)
   std::vector<double> zFiltp;            // Corresponding depths (size nzFilt-1)
-  std::vector<double> minParameters;     // Minimum for each parameter
-  std::vector<double> maxParameters;     // Maximum for each parameter
+  std::vector<std::vector<double> > minParameters;     // Minimum for each parameter
+  std::vector<std::vector<double> > maxParameters;     // Maximum for each parameter
   std::vector<int> staticParameters;     // Indexes of the non varying parameters : Some parameters can be fixed to a value to reduce the dimension
   double Ep;                             // Energy of the prior
   double sigmaP;                         // Standard deviation of the P arrival times picked
@@ -143,7 +154,7 @@ typedef struct{       // To store data characteristics
   double yminGrid;                       // minimum of y coordinate
   double zminGrid;                       // minimum of z coordinate
   // For wavelet parameterization:
-  std::vector<int> indexParameters;      // The params[i] refer to the wavelet coefficient number indexParameters[i] of the decomposition of the profiles
+  std::vector<std::vector<int> > indexParameters;      // The params[i] refer to the wavelet coefficient number indexParameters[i] of the decomposition of the profiles
 }Data;
 
 typedef struct{       // To store the configuration of the run
@@ -190,12 +201,15 @@ typedef struct{       // To store the configuration of the run
   std::vector<int> indices; // indices of the zp values that correspond to layers boundaries
   /************Wavelet variables**************/
   int keep_first_values; // Keep NPU biggest coefficients of the first guess and perturbate them of keep the first NPU coeff
-  std::string wavelet;                           // Wavelet used for the wavelet based filering
-  int ndwts;                                    // Number of DWT stages for the wavelet transform
-  std::vector<double> coeffsP, flagP;       // For the wavelet transform (coeffsP is used to store temporary coefficients)
-  std::vector<int> lengthP;                 // For the wavelet transform
-  std::vector<double> coeffsS, flagS;       // For the wavelet transform
-  std::vector<int> lengthS;                 // For the wavelet transform
+  std::string wavelet;                   // Wavelet used for the wavelet based filering
+  int useAllWavelets;                    // If 1 the inversion will be made on the wavelet coefficient also
+  int nWavelets;
+  std::string listOfWavelets[NUMBER_OF_WAVELETS] = {LIST_OF_WAVELETS};  // That will contain the list of all wavelets
+  int ndwts;                             // Number of DWT stages for the wavelet transform
+  std::vector<std::vector<double> > coeffsP, flagP;    // For the wavelet transform (coeffsP is used to store temporary coefficients)
+  std::vector<std::vector<int> > lengthP;              // For the wavelet transform
+  std::vector<std::vector<double> > coeffsS, flagS;    // For the wavelet transform
+  std::vector<std::vector<int> > lengthS;              // For the wavelet transform
   /************Other options***************/
   int swaves;
   int verbose1;

@@ -26,7 +26,8 @@ CF90     = mpif90                    # Fortran MPI compiler
 CPPFLAGS = -O3 -Wall -DPAR -I$(FFTW3_INCLUDE) -L$(FFTW3_LIB) -llib       # C++ compiler flags
 F90FLAGS = -O3 #-check nobounds -ftz -implicitnone -warn all -nogen-interface # -gen-interfaces Fortran compilation flags
 # for debugging: change -O3 -check nobounds to -O0 -check all -debug -g -fp-stack-check -traceback -ftrapuv
-LDFLAGS = -lifcore -lm -lfftw3 -I$(FFTW3_INCLUDE) -L$(FFTW3_LIB)      # Link flags !!! WARNING !! FOR GNU MPI COMPILERS CHANGE -lifcore TO -lgfortran
+#LDFLAGS = -lgfortran -lm -lfftw3 -lmpfr -lgmp -I$(FFTW3_INCLUDE) -L$(FFTW3_LIB)      # Link flags !!! WARNING !! FOR GNU MPI COMPILERS CHANGE -lifcore TO -lgfortran
+LDFLAGS = -lifcore -lm -lfftw3 -lmpfr -lgmp -I$(FFTW3_INCLUDE) -L$(FFTW3_LIB)      # Link flags !!! WARNING !! FOR GNU MPI COMPILERS CHANGE -lifcore TO -lgfortran
 
 else
 CPP      = g++        #icc              # C++ compiler
@@ -34,7 +35,7 @@ CF90     = gfortran # ifort             # Fortran compiler
 CPPFLAGS = -Wall -O3  -I$(FFTW3_INCLUDE) -L$(FFTW3_LIB) -llib  #-g # -ftz -traceback -ftrapuv -debug all # C++ compiler flags
 F90FLAGS = -O3 #-g #-check all -debug -g -fp-stack-check -traceback -ftrapuv -implicitnone -gen-interfaces -warn all # Fortran compiler flags
 # for debugging: change -O3 -check nobounds to -O0 -check all -debug -g -fp-stack-check -traceback -ftrapuv
-LDFLAGS = -lgfortran -lm -lfftw3  -I$(FFTW3_INCLUDE) -L$(FFTW3_LIB) #-lifcore -lm -lfftw3      # Linker flags 
+LDFLAGS = -lgfortran -lm -lfftw3 -lmpfr -lgmp -I$(FFTW3_INCLUDE) -L$(FFTW3_LIB) #-lifcore -lm -lfftw3      # Linker flags 
 endif
 
 #******* DO NOT CHANGE ANYTHING BELOW *******#
@@ -97,7 +98,7 @@ endif
 # Clean remove bin and obj directories (if you don't want to see the messages use : @rm -rf *.o -> only the error message will appear)
 clean:
 	rm -rf $(BIN_DIR) $(OBJ_DIR) *genmod*
-	find . -name '*~' -print0 | xargs -0 rm
+	#find . -name '*~' -print0 | xargs -0 rm
 
 # Clean + remove executable
 purge: clean

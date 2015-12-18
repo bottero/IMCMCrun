@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
+#include "defines.h"
 #include "structures.h"
 
 #define SPACES " \t\r\n"
@@ -95,10 +96,8 @@ void findthresh(std::vector<double> vector, int N, double& t)
 
 void keepNsignificantValues(std::vector<double>* vector, int N)
 // Keep the N biggest absolute values in vector. Put the others to 0
-// !! Warning !! for example if vector = 10 21 12 12 7 8 and N = 2
-// at the end vector = 0 21 12 12 0 0. We could fix that.
 {
-
+  int notZeros = 0;
   double thresh = 0.0;
   std::vector<double> temp_dwtoutput;
   for (unsigned int i = 0; i < vector->size();i++) {
@@ -108,8 +107,10 @@ void keepNsignificantValues(std::vector<double>* vector, int N)
   findthresh(temp_dwtoutput,N, thresh); // thresh is the Nth biggest value of temp_dwtoutput
   for (unsigned int i = 0; i < vector->size();i++) {
     double temp = fabs((*vector)[i]);
-    if (temp < thresh)
+    if (temp < thresh or notZeros >= N)
       (*vector)[i] = 0.0;
+    else
+      notZeros++;
   }
 }
 
@@ -155,4 +156,13 @@ int closest(std::vector<double>& vec, double value)
   return std::distance(vec.begin(), it);
 }
 
-//**********************************************
+const char* convertDoubleToChar(double value)
+// From a double (ex:4561.54) return a char* (ex: "4561.54")
+{
+    std::ostringstream strs;
+    strs.precision(PREC);
+    strs << value;
+    std::string strstr = strs.str();
+    const char* valueChar = strstr.c_str();
+    return valueChar;
+}

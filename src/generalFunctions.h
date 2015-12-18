@@ -43,5 +43,7 @@ std::string trim (const std::string & s, const std::string & t = SPACES);
 
 int closest(std::vector<double>& vec, double value);
 // Returns the indexes of the closest vector's value that's less than or equal to a given value
+const char* convertDoubleToChar(double value);
+// From a double (ex:4561.54) return a char* (ex: "4561.54")
 
 #endif /* GENERALFUNCTIONS_H_ */

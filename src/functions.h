@@ -24,7 +24,7 @@ If nzFilt < nz => downsample
 If nzFilt > nz => upsample
  
 vp in intrapolated by a linear approximation */
-void InverseWaveletTransform(std::vector<double>* filteredLog, const std::vector<double>* coeffsToKeep, Configuration* config, bool sWaves);
+void InverseWaveletTransform(std::vector<double>* filteredLog, const std::vector<double>* coeffsToKeep, Configuration* config, int wavelet, bool sWaves);
 // Calculate the P or S waves velocity profile corresponding to the wavelet coefficients "coeffsToKeep" (P waves : sWaves=false)
 void InverseLayerTransform(std::vector<double>* filteredProfile, const std::vector<double>* params, Configuration* config, bool sWaves);
 // Calculate the P or S waves velocity profile corresponding to the layers params (P waves : sWaves=false)
@@ -54,7 +54,9 @@ void updateSCI(Run* run, int n);
 // Add a new line to SCI (importance weights (cumulative sum) and normalization coefficients)
 void updateMinMaxProfiles(Chain* chain, Configuration* config);
 // Update in and max velocities investigated
-void updateAverageProfiles(Chain* chain,Configuration* config, int i);
+// void updateAverageProfiles(Chain* chain,Configuration* config, int i); old version
+// Update the average, variance and quantiles profiles
+void updateAverageProfiles(Run* run,Configuration* config, int i);
 // Update the average, variance and quantiles profiles
 void finalizeRun(Run* run);
 // Free memory allocated for the chains and finalize MPI

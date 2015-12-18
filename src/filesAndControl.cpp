@@ -128,27 +128,43 @@ void write_config(const Run* run, const Configuration* config)
       file << "  Number of points in S wave velocity first guessS : " << config->data.firstGuessS.size() << std::endl;
     
     file << std::endl << "P R I O R  K N O W L E D G E  O N  T H E  P A R A M E T E R S" << std::endl << std::endl;
-    if (config->waveletParameterization)
+    if (config->waveletParameterization) {
       file << std::endl << "Wavelet based parameterization" << std::endl;
+      if (config->useAllWavelets) {
+        file << "  Using wavelets (" << config->nWavelets << " in the list):";
+        file << " ";
+        for (int wavelet = 0; wavelet < config->nWavelets; wavelet++) // Loop on the wavelets used
+          file << config->listOfWavelets[wavelet] << " ";
+        file << std::endl;
+      }
+    }
     else
       file << std::endl << "Layers based parameterization" << std::endl;
-    file << "  Number of parameters : " << config->data.minParameters.size() << std::endl;
+    file << "  Number of parameters : " << config->data.minParameters[0].size();
+    if (config->useAllWavelets and config->waveletParameterization)
+      file << " plus the wavelet type.";
+    std::cout << std::endl;
     file << "  (DI : " << config->di << ", DF : " << config->df << ")" << std::endl;
-    file << "                  min     max     ";
-    for (int i=0;i<config->nbt;i++) 
-      file << "delta for T" << i << "   ";
-    file << std::endl;
-    for (int i=0;i<(int)(config->data.minParameters.size());i++) {
-      file << "  Parameter "<< i << " :";
-      file << " " << config->data.minParameters[i] << "  " << config->data.maxParameters[i] << "     ";
-      for (int j=0;j<config->nbt;j++) 
-        file << run->chains[j]->deltaParameters[i] << "         ";
-      if (config->waveletParameterization) {
-        if(config->swaves && (i >= (int)((double)config->data.minParameters.size()/2.0) )) // First params are for P waves
-          file << "  (refer to wavelet coefficient number " << config->data.indexParameters[i] << " of the S wave velocity first guess)" << std::endl;
-        else
-          file << "  (refer to wavelet coefficient number " << config->data.indexParameters[i] << " of the P wave velocity first guess)" << std::endl;
+    for (int wavelet = 0; wavelet < config->nWavelets; wavelet++) { // Loop on the wavelets used
+      if (config->useAllWavelets and config->waveletParameterization)
+        file << "  Wavelet:" << config->listOfWavelets[wavelet] << std::endl;
+      file << "                  min     max     ";
+      for (int i=0;i<config->nbt;i++) 
+        file << "delta for T" << i << "   ";
+      file << std::endl;
+      for (int i=0;i<(int)(config->data.minParameters[wavelet].size());i++) {
+        file << "  Parameter "<< i << " :";
+        file << " " << config->data.minParameters[wavelet][i] << "  " << config->data.maxParameters[wavelet][i] << "     ";
+        for (int j=0;j<config->nbt;j++) 
+          file << run->chains[j]->deltaParameters[wavelet][i] << "         ";
+        if (config->waveletParameterization) {
+          if(config->swaves && (i >= (int)((double)config->data.minParameters[wavelet].size()/2.0) )) // First params are for P waves
+            file << "  (refer to wavelet coefficient number " << config->data.indexParameters[wavelet][i] << " of the S wave velocity first guess)" << std::endl;
+          else
+            file << "  (refer to wavelet coefficient number " << config->data.indexParameters[wavelet][i] << " of the P wave velocity first guess)" << std::endl;
+        }
       }
+      std::cout << std::endl;
     }
     if((int)(config->data.staticParameters.size()) != 0) {
       file << "  Static parameters :";
@@ -191,12 +207,15 @@ void write_config(const Run* run, const Configuration* config)
       file << std::endl << "W A V E L E T  C O N F I G" << std::endl << std::endl;
       file << "  Wavelet used : " << config->wavelet << std::endl;
       file << "  Number of DWT stages : " << config->ndwts << std::endl;
-      file << "  Size of coeffsP : " << config->coeffsP.size() << std::endl;
-      file << "  Size of flagP : " << config->flagP.size() << std::endl;
-      file << "  Size of lengthP : " << config->lengthP.size() << std::endl;
-      file << "  Size of coeffsS : " << config->coeffsS.size() << std::endl;
-      file << "  Size of flagS : " << config->flagS.size() << std::endl;
-      file << "  Size of lengthS : " << config->lengthS.size() << std::endl;
+      for (int wavelet = 0; wavelet < config->nWavelets; wavelet++) { // Loop on the wavelets used
+        file << "  Size of coeffsP[" << config->listOfWavelets[wavelet] << "] : " << config->coeffsP[wavelet].size() << std::endl;
+        file << "  Size of flagP[" << config->listOfWavelets[wavelet] << "] : " << config->flagP[wavelet].size() << std::endl;
+        file << "  Size of lengthP[" << config->listOfWavelets[wavelet] << "] : " << config->lengthP[wavelet].size() << std::endl;
+        file << "  Size of coeffsS[" << config->listOfWavelets[wavelet] << "] : " << config->coeffsS[wavelet].size() << std::endl;
+        file << "  Size of flagS[" << config->listOfWavelets[wavelet] << "] : " << config->flagS[wavelet].size() << std::endl;
+        file << "  Size of lengthS[" << config->listOfWavelets[wavelet] << "] : " << config->lengthS[wavelet].size() << std::endl;
+      }
+      file << std::endl;
     }
     file.close();
   }
@@ -496,6 +515,27 @@ void writeAverages(const Run* run, const Configuration* config)
 // Write the average, variance and quantiles profiles on files
 {
   if (config->mpiConfig.rank == 0) {   // (In case of parallel implementation just one process has to create files)
+    std::string strFileGlobalAverage,strFileGlobalVar;
+    strFileGlobalVar = config->outputDir+"globalVarP."+config->code+".dat";   // We will obtain /home/abottero/globalVarP.451.dat for example
+    strFileGlobalAverage = config->outputDir+"globalAverageP."+config->code+".dat";   // We will obtain /home/abottero/globalAverageP.451.dat for example
+    std::ofstream fileGlobalVar(strFileGlobalVar.c_str()),fileGlobalAverage(strFileGlobalAverage.c_str());
+    for (int iz=0;iz<config->data.nzFilt-1;iz++) { // Loop on the values
+      fileGlobalAverage << config->data.zFiltp[iz] << " " << run->averageP[iz] << std::endl;
+      fileGlobalVar << config->data.zFiltp[iz] << " " << run->varP[iz] << std::endl;
+    }
+    fileGlobalAverage.close(); 
+    fileGlobalVar.close(); 
+    if(config->swaves) {
+      strFileGlobalVar = config->outputDir+"globalVarS."+config->code+".dat";   // We will obtain /home/abottero/globalVarS.451.dat for example
+      strFileGlobalAverage = config->outputDir+"globalAverageS."+config->code+".dat";   // We will obtain /home/abottero/globalAverageS.451.dat for example
+      std::ofstream fileGlobalVar(strFileGlobalVar.c_str()),fileGlobalAverage(strFileGlobalAverage.c_str());
+      for (int iz=0;iz<config->data.nzFilt-1;iz++) { // Loop on the values
+        fileGlobalVar << config->data.zFiltp[iz] << " " << run->varS[iz] << std::endl;
+        fileGlobalAverage << config->data.zFiltp[iz] << " " << run->averageS[iz] << std::endl;
+      }
+      fileGlobalAverage.close(); 
+      fileGlobalVar.close(); 
+    }
     for(int i=0; i<(int)run->chains.size();i++) { // Loop on all the chains
       std::ostringstream ii;   // Store i as a string
       ii << i;

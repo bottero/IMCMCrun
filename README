@@ -16,7 +16,18 @@ _fftw3 http://www.fftw.org/download.html. This program is needed. It is easy to 
 mind the place where you install it. By default it is installed in /usr/local/ (/usr/local/bin, /usr/local/lib, /usr/local/include and
 /usr/local/share) but you can specified an other directory when configuring by using --prefix:
 ./configure --prefix=/absolute/path/to/the/directory/you/want
-
+_gmp https://gmplib.org. Download it, go to parent directory and type: 
+   ./configure --prefix=/usr
+	 sudo make
+	 sudo make check
+   sudo make install
+_THEN install MPFR http://www.mpfr.org/.Download it, go to parent directory and type:
+   curl http://www.mpfr.org/mpfr-3.1.3/allpatches | patch -N -Z -p1
+   ./configure --prefix=/usr
+	 sudo make
+	 sudo make check
+   sudo make install
+   
 GETTING STARTED 
 ===============
 
@@ -201,13 +212,15 @@ _qSupPI.XXX.dat : superior value of the quantile calculated for P wave velocitie
 
 _qSupSI.XXX.dat : superior value of the quantile calculated for S wave velocities and chain I
 
+TODO finish that
+
 TIPS
 ====
 
 _If you want to run the program again you don't need to compile it again, just edit the file run_that_example.sh : MAKEALL='no'
 _To delete all file created but not OUTPUT_FILES : "make clean", to delete everything "make purge"
 _If there is a bug the first thing to do is to set VERBOSE1=1 and VERBOSE2 = 1 in .cfg file
-_If you stop a run before it ends you can still analyse the first results
+_If you stop a run before it ends you can still analyse the first results with utils/watchResults.py
 _If you want to run EXACTLY the same example (to calculate more iterations for example) let say it is the run number XXX. Copy the
 seed at the beginning of the file config.XXX.dat then use the same cfg file but turning USE_DEFAULT_SEED to 1 and pasting the seed
 in DEFAULT_SEED. The parameters of the run must remain the same (but you can display more details, write files...)
@@ -219,7 +232,7 @@ _If you perform an ANALYTICAL_RUN, the file NAME_OF_REAL_PROFILE_FILE_P (and NAM
 z | v(z) with a step fixed (i.e z[1]-z[0] = z[2]-z[1] = ...)
 _Do not put source too close from z borders there is no security for now (this might cause segmentation faults in the eikonal solver)
 _The grid is automaticaly set from the position of sources/receivers. The margin in driven by COORD_TOL.
-_If by chance two runs have the same key XXX the last one will erase the previous one (1 chance over 1000)
+_If by chance two runs have the same key XXX the last one will erase the previous one (1 chance over 1000 but it happens! Apply make purge often)
 _Z must point downwards (...z[2]>z[1]>z[0])
 _Coordinates must be >> TINYVAL (defined in src/define.h).
 _In the .cfg file "NC = 4,4," for example -> will produce a bug (we would have to trim useless comas)
@@ -239,7 +252,6 @@ How to make this code better : _Improve this README file
                                _Add options in the Makefile and put *genmod* files in obj
                                _verify that dz is constant
                                _Continue the function : checkConfig (filesAndControl.cpp)
-                               _Fix keepNsignificantValues (generalFunctions.cpp) : see comments near this function
                                _Ctrl+f TODO in all files
                                _Parallelize the function createDataset (initializations.cpp)
                                _Make first guess curves optionnal
@@ -250,10 +262,10 @@ How to make this code better : _Improve this README file
                                _Use FTeik2D for 2D problems and a simple calculation (t=d/v) for 1D problems.
                                _Write "Mean differences at the receivers between big run and that run for shot number "<< shotNumber << " : "  << averageDiffs[min_index] on a file
                                _Improve findOptimumGrid and buildPrior
-                               _Test si le premier point de z est negatif
-                               _Completer le fichier config       
-                               _In build prior calculate Tmax        
+                               _Test if first point of z is negative
+                               _Complete config file       
+                               _In build prior calculate Tmax (add an option: automaticaly calculate Tmax)
                                _Script redoThatRun.sh XXX -> copy files, par_file, seed...
                                _Write all files with c++ fashion (filesAndControl.cpp)
-                               _Record min and max velocity values after a given iteration
+                               _Record min and max velocity values after a given iteration (not from the beginning)
 
