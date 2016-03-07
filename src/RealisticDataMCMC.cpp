@@ -23,13 +23,18 @@ int main( int argc, char *argv[]) // argc : Number of arguments, argv : the argu
 {
   //*************************************************  Initialization : *********************************************************//
   
-  Configuration config;                   // Initialize the configuration structure that will contain the config chosen for the run
-  config = parameters_setting(argc,argv); // Store the configuration of the run in the structure "config"
-  loadData(&config);                      // Load the data (arrival times, sources and receivers positions) contained on the files
+  Configuration config;                     // Initialize the configuration structure that will contain the config chosen for the run
+  config = parameters_setting(argc,argv);   // Store the configuration of the run in the structure "config"
+  loadData(&config);                        // Load the data (arrival times, sources and receivers positions) contained on the files
+  designSmallGrid(&config);                 // Calculate optimum nx,ny,nzFilt,dx,dy,dzFilt to reduce computation time
+  if (config.calculateTimesForFirstGuess) { // With this option we just run the eikonal for the profile(s) given as first guess(es)
+    calculateTimesForFirstGuess(&config);   // ...
+    MPI_Finalize();                         // ...
+    exit(0);                                // ... and we terminate!
+  }
   if (config.buildPrior)                  //
     buildPrior(&config);                  // Build the prior features
   generate_profiles_from_prior(&config);  // Generate config.nPriorProfiles profiles from a priori space in config.outputDir/priorCurvesXXX/
-  designSmallGrid(&config);               // Calculate optimum nx,ny,nzFilt,dx,dy,dzFilt to reduce computation time
   if (config.analyticalRun)               // If we perform an analytical run :
     createDataset(&config);               // ... create the arrival-times from the real profile
   Run run;                                // Create the run, it will contain all the chains

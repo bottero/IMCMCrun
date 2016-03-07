@@ -234,7 +234,6 @@
 !___________________________________________________
     t1 = min(dble(tt(i,j,k)),t1d,t2d,t3d)
     tt(i,j,k)=sngl(t1)
-
 !
 ! End of Calculation for this sweep
 !__________________________________

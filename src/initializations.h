@@ -40,6 +40,8 @@ void generate_profiles_from_prior(Configuration* config);
 // Generate config.nPriorProfiles profiles from a priori space in config.outputDir/priorProfilesXXX/
 void designSmallGrid(Configuration* config);
 // Calculate optimum nx,ny,nzFilt,dx,dy,dzFilt to reduce computation time
+void calculateTimesForFirstGuess(Configuration* config);
+// Runs the eikonal for first guess(es) curves
 void findOptimumGrid(double xmaxGrid, double ymaxGrid, double dxmin, double dymin, Configuration* config);
 // Filter a first guess curve iteratively and run the eikonal each time to determine nx,ny and nzFilt to use
 // Then calculate dx,dy and dzFilt

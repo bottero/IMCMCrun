@@ -1,6 +1,8 @@
 #!/bin/bash
 #
-# Convenient script to run the program IMCMC run 
+# Convenient script to run the program IMCMC run
+# But use the scripts in examples/ instead to get
+# started
 #
 ###################################################
 

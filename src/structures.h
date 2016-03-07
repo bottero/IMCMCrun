@@ -50,9 +50,10 @@ typedef struct{       // To store a Markov chain
   std::vector<double> weightedAverageP,weightedAverageS; // Used to calculate global averages
   mpfr_t* dotProductP; // Used to calculate global averages
   mpfr_t* dotProductS; // Used to calculate global averages
-  std::vector<double> weightedVarP, weightedVarS; // Used to calculate global variances
+  std::vector<double> weightedVarP, weightedVarS, weightedVarVpVs; // Used to calculate global variances
   mpfr_t* dotProductVarP; // Used to calculate global variances
   mpfr_t* dotProductVarS; // Used to calculate global variances
+  mpfr_t* dotProductVarVpVs; // Used to calculate global variances
 }Chain;
 
 typedef struct{       // To store the features of a swap
@@ -70,7 +71,7 @@ typedef struct{       // To store parallel Markov chains
   std::vector<double> minP;                 // To keep minimum P wave velocity values investigated by the algorithm
   std::vector<double> minS;                 // To keep minimum S wave velocity values investigated by the algorithm
   std::vector<double> averageP, averageS;   // To keep the global mean model
-  std::vector<double> varP, varS;           // To keep the global variance
+  std::vector<double> varP, varS, varVpVs;  // To keep the global variances
   // std::vector<double> qInfP, qSupP, qInfS, qSupS; // To keep the global quantiles TODO
   std::vector<int> idxE;  // To keep indices of best models
   std::vector<double> bestE;  // To keep energies of best models
@@ -103,9 +104,12 @@ typedef struct{       // 3D arrays to store the velocity model (P and S waves ve
   float dx;                                 // Interval in direction x
   float dy;                                 // Interval in direction y
   float dz;                                 // Interval in direction z
-  double xmin;                              // minimum of x coordinate
-  double ymin;                              // minimum of y coordinate
-  double zmin;                              // minimum of z coordinate
+  std::vector<double> xmin;                 // minimum of x coordinate for each shot
+  std::vector<double> ymin;                 // minimum of y coordinate for each shot
+  std::vector<double> zmin;                 // minimum of z coordinate for each shot
+  int OK;                                   // Will be set to 1 if we are precise enough with the eikonal and this config
+  double percentOk;
+  double averageDiff;
 }VelocityModel;
 
 typedef struct{       // To store all that is related with MPI
@@ -150,9 +154,12 @@ typedef struct{       // To store data characteristics
   float dz;                              // Interval in direction z for the first guesses (and the real profiles)
   float dzFilt;                          // Interval in direction z for the filtered profiles > dz (we need less 
                                          // points to describe the filtered profiles properly)
-  double xminGrid;                       // minimum of x coordinate
-  double yminGrid;                       // minimum of y coordinate
-  double zminGrid;                       // minimum of z coordinate
+  double xminGridGlob;                   // minimum of x coordinate (depending on the position of all the source/receiver and on the profiles)
+  double yminGridGlob;                   // minimum of x coordinate (depending on the position of all the source/receiver and on the profiles)
+  double zminGridGlob;                   // minimum of x coordinate (depending on the position of all the source/receiver and on the profiles)
+  std::vector<double> xmin;              // minimum of x coordinate for each shot
+  std::vector<double> ymin;              // minimum of y coordinate for each shot
+  std::vector<double> zmin;              // minimum of z coordinate for each shot
   // For wavelet parameterization:
   std::vector<std::vector<int> > indexParameters;      // The params[i] refer to the wavelet coefficient number indexParameters[i] of the decomposition of the profiles
 }Data;
@@ -220,8 +227,8 @@ typedef struct{       // To store the configuration of the run
   int shotNumberRef;
   int nxref;
   int nyref;
-  int numberOfXpointsToDescribeTheSmallestDistanceDefault;
-  int numberOfYpointsToDescribeTheSmallestDistanceDefault;
+  int nxDefault;
+  int nyDefault;
   int nzfiltDefault;
   int analyticalRun;
   int recalculateT0;
@@ -231,14 +238,15 @@ typedef struct{       // To store the configuration of the run
   double minEtest;
   double maxEtest;
   int view;
-  std::vector<int> noXptdtsdVec;
-  std::vector<int> noYptdtsdVec;
+  std::vector<int> nxVec;
+  std::vector<int> nyVec;
   std::vector<int> nzFiltVec;
   int nBestProfiles;
   int computeResiduals;
   int iterationsResiduals;
   int iterationsBestProfiles;
-
+  int calculateTimesForFirstGuess;
+  int resample;
 }Configuration;
 
 /*

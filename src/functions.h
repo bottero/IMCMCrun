@@ -3,8 +3,13 @@
 
 #include "structures.h"
 
-double getTime(tab3d<double>* tt3d,Coordinate coord, VelocityModel* velModel);
+double getTime(tab3d<double>* tt3d,Coordinate coord, VelocityModel* velModel, int ishot);
 // Give the time at coord even if it is not on a point of the grid
+double getDistance(Coordinate coord1,Coordinate coord2);
+// Returns the distance between two points
+void calculateShiftForEachShot(VelocityModel* velModel, Configuration* config);
+// The eikonal is far more precise when the source is set on a grid point. This function calculate the optimum xminGrid,yminGrid
+// zminGrid in that purpose
 std::vector<double> downSampleProfile(std::vector<double> profile, std::vector<double> zp, std::vector<double> zFiltp);
 /* Downsample (or upsample) a curve defined as :
   |       v[0]       |       v[1]       |        ...        |      v[nz-1]      |
@@ -58,6 +63,8 @@ void updateMinMaxProfiles(Chain* chain, Configuration* config);
 // Update the average, variance and quantiles profiles
 void updateAverageProfiles(Run* run,Configuration* config, int i);
 // Update the average, variance and quantiles profiles
+void isThisConfigOk(VelocityModel* velModel, Configuration* config);
+// Set refVelModel->OK to 1 if we are precise enough with the eikonal and this config
 void finalizeRun(Run* run);
 // Free memory allocated for the chains and finalize MPI
 

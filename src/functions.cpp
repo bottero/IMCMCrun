@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <cstring>
 #include <vector>
 #include <string>
 #include <cmath>
@@ -21,26 +22,88 @@
 #include "generalFunctions.h"
 #include "filesAndControl.h"
 
-double getTime(tab3d<double>* tt3d,Coordinate coord,VelocityModel* velModel)
+double getTime(tab3d<double>* tt3d,Coordinate coord,VelocityModel* velModel, int ishot)
 // Give the time at coord even if it is not on a point of the grid
 {
-  double Z=(coord.z-velModel->zmin)/velModel->dz +1.0; // Z=zin/dzin+1.
-  double X=(coord.x-velModel->xmin)/velModel->dx +1.0; // X=xin/dxin+1.
-  double Y=(coord.y-velModel->ymin)/velModel->dy +1.0; // Y=yin/dyin+1.
-
-  int iz=(int)floor(Z), ix= (int)floor(X), iy= (int)floor(Y);
+  double Z=(coord.z-velModel->zmin[ishot])/velModel->dz +1.0; // Z=zin/dzin+1.
+  double X=(coord.x-velModel->xmin[ishot])/velModel->dx +1.0; // X=xin/dxin+1.
+  double Y=(coord.y-velModel->ymin[ishot])/velModel->dy +1.0; // Y=yin/dyin+1.
+  int iz=(int)floor(Z)-1, ix=(int)floor(X)-1, iy=(int)floor(Y)-1;
   int kz=iz+1, kx=ix+1, ky=iy+1;
-  double dz1=Z-(double)iz,dx1=X-(double)ix,dy1=Y-(double)iy;
+  double dz1=Z-(double)(iz+1),dx1=X-(double)(ix+1),dy1=Y-(double)(iy+1);
   double dz2=1.0-dz1,dx2=1.0-dx1,dy2=1.0-dy1;
-  double t = dz2 * dx2 * dy2 * tt3d->get(iz-1,ix-1,iy-1)
-          +  dz1 * dx2 * dy2 * tt3d->get(kz-1,ix-1,iy-1)
-          +  dz2 * dx1 * dy2 * tt3d->get(iz-1,kx-1,iy-1)
-          +  dz2 * dx2 * dy1 * tt3d->get(iz-1,ix-1,ky-1)
-          +  dz2 * dx1 * dy1 * tt3d->get(iz-1,kx-1,ky-1)
-          +  dz1 * dx2 * dy1 * tt3d->get(kz-1,ix-1,ky-1)
-          +  dz1 * dx1 * dy2 * tt3d->get(kz-1,kx-1,iy-1)
-          +  dz1 * dx1 * dy1 * tt3d->get(kz-1,kx-1,ky-1);
+  double t = dz2 * dx2 * dy2 * tt3d->get(iz,ix,iy)
+        +  dz1 * dx2 * dy2 * tt3d->get(kz,ix,iy)
+        +  dz2 * dx1 * dy2 * tt3d->get(iz,kx,iy)
+        +  dz2 * dx2 * dy1 * tt3d->get(iz,ix,ky)
+        +  dz2 * dx1 * dy1 * tt3d->get(iz,kx,ky)
+        +  dz1 * dx2 * dy1 * tt3d->get(kz,ix,ky)
+        +  dz1 * dx1 * dy2 * tt3d->get(kz,kx,iy)
+        +  dz1 * dx1 * dy1 * tt3d->get(kz,kx,ky);
+//    std::cout << std::endl << "Get time at : " << std::endl;
+//    std::cout << "xin : " << coord.x << " - " << velModel->xmin[ishot] << " = " << coord.x - velModel->xmin[ishot] << std::endl;
+//    std::cout << "yin : " << coord.y << " - " << velModel->ymin[ishot] << " = " << coord.y - velModel->ymin[ishot] << std::endl;
+//    std::cout << "zin : " << coord.z << " - " << velModel->zmin[ishot] << " = " << coord.z - velModel->zmin[ishot] << std::endl;
+//    std::cout << "X : " << X << " Y " << Y << " Z " << Z << std::endl;
+//    std::cout << "ix : " << ix << " iy " << iy << " iz " << iz << std::endl;
+//    std::cout << "kx : " << kx << " ky " << ky << " kz " << kz << std::endl;
+//    std::cout << "dx1 : " << dx1 << " dy1 : " << dy1 << " dz1 : " << dz1 << std::endl;
+//    std::cout << "dx2 : " << dx2 << " dy2 : " << dy2 << " dz2 : " << dz2 << std::endl;
+//    std::cout << "Times in the corners " << std::endl;
+//    std::cout << "000 : " << tt3d->get(iz,ix,iy) << std::endl;
+//    std::cout << "100 : " << tt3d->get(iz,kx,iy) << std::endl;
+//    std::cout << "010 : " << tt3d->get(iz,ix,ky) << std::endl;
+//    std::cout << "110 : " << tt3d->get(iz,kx,ky) << std::endl;
+//    std::cout << "001 : " << tt3d->get(kz,ix,iy) << std::endl;
+//    std::cout << "101 : " << tt3d->get(kz,kx,iy) << std::endl;
+//    std::cout << "011 : " << tt3d->get(kz,ix,ky) << std::endl;
+//    std::cout << "111 : " << tt3d->get(kz,kx,ky) << std::endl;
+//    double minValue = tt3d->get(0,0,0);
+//    double maxValue = tt3d->get(0,0,0);
+//    for ( int i = 0; i < tt3d->get_nx(); i++) {
+//      for ( int j = 0; j < tt3d->get_ny(); j++) {
+//        for (int k = 0; k < tt3d->get_nz(); k++) {
+//          if (tt3d->get(k,i,j) < minValue)
+//            minValue = tt3d->get(k,i,j);
+//          else if(tt3d->get(k,i,j) > maxValue)
+//            maxValue = tt3d->get(k,i,j);
+//        }
+//      }
+//    }
+//   
+//    std::cout << "min : " << minValue << std::endl;
+//    std::cout << "max : " << maxValue << std::endl;
+//    std::cout.precision(PREC);
+//    std::cout << " ---> t = " << t << std::endl;
   return t;
+}
+
+double getDistance(Coordinate coord1,Coordinate coord2)
+// Returns the distance between two points
+{
+  return sqrt( pow(coord1.x-coord2.x,2.0) + pow(coord1.y-coord2.y,2.0) + pow(coord1.z-coord2.z,2.0));
+}
+
+void calculateShiftForEachShot(VelocityModel* velModel, Configuration* config)
+// The eikonal is far more precise when the source is set on a grid point. This function calculate the optimum xminGrid,yminGrid
+// zminGrid in that purpose
+{
+  double epsilonX = 0.0,epsilonY = 0.0,epsilonZ = 0.0;
+  if ((int)velModel->xmin.size() > 0) {
+    std::cout << "Problem!? " << velModel->xmin[0] << std::endl;
+    std::cout << "Problem!? " << velModel->ymin[0] << std::endl;
+    std::cout << "Problem!? " << velModel->zmin[0] << std::endl;
+    exit(0);
+  }
+  for(int ishot=0;ishot<(int)config->data.coordShots.size();ishot++) 
+  {
+    epsilonX = config->data.coordShots[ishot].x - config->data.xminGridGlob - floor((config->data.coordShots[ishot].x-config->data.xminGridGlob)/velModel->dx)*velModel->dx;
+    epsilonY = config->data.coordShots[ishot].y - config->data.yminGridGlob - floor((config->data.coordShots[ishot].y-config->data.yminGridGlob)/velModel->dy)*velModel->dy;
+    epsilonZ = config->data.coordShots[ishot].z - config->data.zminGridGlob - floor((config->data.coordShots[ishot].z-config->data.zminGridGlob)/velModel->dz)*velModel->dz;
+    velModel->xmin.push_back(config->data.xminGridGlob + epsilonX);
+    velModel->ymin.push_back(config->data.yminGridGlob + epsilonY);
+    velModel->zmin.push_back(config->data.zminGridGlob + epsilonZ);
+  }
 }
 
 std::vector<double> downSampleProfile(std::vector<double> v, std::vector<double> zp, std::vector<double> zFiltp)
@@ -101,20 +164,20 @@ void InverseWaveletTransform(std::vector<double>* filteredProfile, const std::ve
       exit(0);
     }
     numberOfCoeffsKept=(int)((double)config->data.indexParameters[wavelet].size()/2.0);
-    if (config->verbose2 && config->mpiConfig.rank == 0) {
-      std::cout << "CoeffsS[" << config->listOfWavelets[wavelet] << "] : ";
-      for (std::vector<double>::const_iterator j = config->coeffsS[wavelet].begin(); j != config->coeffsS[wavelet].end(); ++j)
-        std::cout << *j << ' ';
-      std::cout << std::endl;
-    }
+//    if (config->verbose2 && config->mpiConfig.rank == 0) {
+//      std::cout << "CoeffsS[" << config->listOfWavelets[wavelet] << "] : ";
+//      for (std::vector<double>::const_iterator j = config->coeffsS[wavelet].begin(); j != config->coeffsS[wavelet].end(); ++j)
+//        std::cout << *j << ' ';
+//      std::cout << std::endl;
+//    }
     for(int j=0;j<numberOfCoeffsKept;j++) // Loop on the coefficients
       config->coeffsS[wavelet][(int)config->data.indexParameters[wavelet][j]]=(*params)[j+numberOfCoeffsKept]; // Copy them into config->coeffsS[wavelet]
-    if (config->verbose2 && config->mpiConfig.rank == 0) {
-      std::cout << "CoeffsS[" << config->listOfWavelets[wavelet] << "] : ";
-      for (std::vector<double>::const_iterator j = config->coeffsS[wavelet].begin(); j != config->coeffsS[wavelet].end(); ++j)
-        std::cout << *j << ' ';
-      std::cout << std::endl;
-    }
+//    if (config->verbose2 && config->mpiConfig.rank == 0) {
+//      std::cout << "CoeffsS[" << config->listOfWavelets[wavelet] << "] : ";
+//      for (std::vector<double>::const_iterator j = config->coeffsS[wavelet].begin(); j != config->coeffsS[wavelet].end(); ++j)
+//        std::cout << *j << ' ';
+//      std::cout << std::endl;
+//    }
     idwt(config->coeffsS[wavelet], config->flagS[wavelet], config->listOfWavelets[wavelet], *filteredProfile, config->lengthS[wavelet]);  // Performs IDWT
   }
 }
@@ -193,6 +256,8 @@ void meshing(std::vector<double>* profile, VelocityModel* velModel, bool swaves)
 void makeVel(VelocityModel* velModel, State* state, Configuration* config)
 // Build the velocity model corresponding to the parameters of the state : this will have to be change each time we change the problem.
 {
+  if(config->verbose1 && config->mpiConfig.rank == 0)
+    std::cout << "        makeVel in..." << std::endl;
   std::vector<double> filteredProfileP;
   if (config->waveletParameterization)
     InverseWaveletTransform(&filteredProfileP,&(state->params), config, state->wavelet, false); // Calculate the P waves velocity profile corresponding to the wavelet coefficients (nz-1 points)
@@ -221,33 +286,46 @@ void makeVel(VelocityModel* velModel, State* state, Configuration* config)
     }
     meshing(&downSampledSvel,velModel,true); // Extend this profile on the whole mesh (coarsen the sampling)
   }
+  if(config->verbose1 && config->mpiConfig.rank == 0)
+    std::cout << "        makeVel out..." << std::endl;
 }
 
 void eikonal3d(tab3d<double>* tt3d, const VelocityModel* velModel,const Configuration* config, int shotNumber, bool sWaves)
 // Calculate the P or S waves (sWaves==false or sWaves==true) travel times corresponding to the shot number i the velocity model and
 // the geometric configuration stored in config.
 {
+  if(config->verbose2 && config->mpiConfig.rank == 0)
+    std::cout << "      Eikonal solver in..." << std::endl;
   int nx = tt3d->get_nx(), ny = tt3d->get_ny(), nz = tt3d->get_nz();
   float dzin = velModel->dz, dxin = velModel->dx, dyin = velModel->dy;
   int nsweep = config->nSweeps;
   float epsin = config->epsin ;
-  float zsin=(float)config->data.coordShots[shotNumber].z-(float)velModel->zmin;
-  float xsin=(float)config->data.coordShots[shotNumber].x-(float)velModel->xmin;
-  float ysin=(float)config->data.coordShots[shotNumber].y-(float)velModel->ymin;
-  //std::cout << "nx :" << nx << " ny : " << ny << " nz : " << nz << std::endl;
-  //std::cout << "dxin :" << dxin << " dyin : " << dyin << " dzin : " << dzin << std::endl;
-  //std::cout << "xsin :" << xsin << " ysin : " << ysin << " zsin : " << zsin << std::endl;
-  //std::cout << "nsweep :" << nsweep << " epsin : " << epsin << std::endl;
+  float zsin=(float)config->data.coordShots[shotNumber].z-(float)velModel->zmin[shotNumber];
+  float xsin=(float)config->data.coordShots[shotNumber].x-(float)velModel->xmin[shotNumber];
+  float ysin=(float)config->data.coordShots[shotNumber].y-(float)velModel->ymin[shotNumber];
+  if(config->verbose2 && config->mpiConfig.rank == 0) {
+    std::cout << "        nx :" << nx << " ny : " << ny << " nz : " << nz << std::endl;
+    std::cout << "        dxin :" << dxin << " dyin : " << dyin << " dzin : " << dzin << std::endl << std::endl;
+    std::cout << "        The source is set at : " << std::endl;
+    std::cout << "        X : " << (float)config->data.coordShots[shotNumber].x << " - " << (float)velModel->xmin[shotNumber] << " = " << xsin << std::endl;
+    std::cout << "        Y : " << (float)config->data.coordShots[shotNumber].y << " - " << (float)velModel->ymin[shotNumber] << " = " << ysin << std::endl;
+    std::cout << "        Z : " << (float)config->data.coordShots[shotNumber].z << " - " << (float)velModel->zmin[shotNumber] << " = " << zsin << std::endl<< std::endl;
+    std::cout << "        nsweep :" << nsweep << " epsin : " << epsin << std::endl;
+  }
   if(sWaves==true) 
     fteik_(velModel->velS->get_values(),tt3d->get_values(),&nz,&nx,&ny,&zsin,&xsin,&ysin,&dzin,&dxin,&dyin,&nsweep,&epsin); // Call to Fortran function
   else
     fteik_(velModel->velP->get_values(),tt3d->get_values(),&nz,&nx,&ny,&zsin,&xsin,&ysin,&dzin,&dxin,&dyin,&nsweep,&epsin); // Call to Fortran function
+  if(config->verbose2 && config->mpiConfig.rank == 0)
+    std::cout << "      Eikonal solver out..." << std::endl;
 }
 
 double energy(State* state,Chain* chain,Configuration* config)
 // Give the energy of a state in a given chain (we need to give the chain to get the temperature)
 // T0 is calculated just using P waves TODO
 {
+  if(config->verbose1 && config->mpiConfig.rank == 0)
+    std::cout << "Computing energy..." << std::endl;
   double E=0.0;
   ArrivalTimes arrivalTimes;
   int numberOfShots = (int)config->data.coordShots.size();
@@ -255,7 +333,8 @@ double energy(State* state,Chain* chain,Configuration* config)
   VelocityModel velModel;
   velModel.nx=config->data.nx; velModel.ny=config->data.ny; velModel.nz=config->data.nzFilt;
   velModel.dx=config->data.dx; velModel.dy=config->data.dy; velModel.dz=config->data.dzFilt;
-  velModel.xmin = config->data.xminGrid; velModel.ymin = config->data.yminGrid; velModel.zmin = config->data.zminGrid;
+  calculateShiftForEachShot(&velModel,config);
+  //velModel.xmin = config->data.xminGrid; velModel.ymin = config->data.yminGrid; velModel.zmin = config->data.zminGrid;
   velModel.velP= new tab3d<double>(velModel.nz-1,velModel.nx-1,velModel.ny-1,-1);  // Create a (nz-1,nx-1,ny-1) mesh and initialize every cell at -1
   if (config->swaves)
     velModel.velS= new tab3d<double>(velModel.nz-1,velModel.nx-1,velModel.ny-1,-1);  // Create a (nz-1,nx-1,ny-1) mesh and initialize every cell at -1
@@ -276,6 +355,7 @@ double energy(State* state,Chain* chain,Configuration* config)
     tab3d<double> tt3dS(config->data.nzFilt,config->data.nx,config->data.ny,-1.0); // TODO : this is declared even if swaves == false -> change that
     double sumP=0.0, sumS=0.0, totalSumP=0.0, totalSumS=0.0;
     std::vector<int> indexP, indexS;
+    std::vector<double> t0P,t0S;
     double t0=0.0;   // Origin time of the shot (if config->recalculateT0 == 1 we will recalculate it)
     int numberOfEikonalToCompute = 0;
 
@@ -287,95 +367,85 @@ double energy(State* state,Chain* chain,Configuration* config)
     #ifdef PAR
       MPI_Barrier(MPI_COMM_WORLD);
     #endif      
-    
-    for(int i=config->mpiConfig.rank;i<numberOfEikonalToCompute;i+=config->mpiConfig.nb_process) { // Loop on the shots
-      if (i<numberOfShots) { // P waves
+    std::vector<double> arrivalTimesPforCurrentShot,arrivalTimesSforCurrentShot;
+    for(int i=config->mpiConfig.rank;i<numberOfEikonalToCompute;i+=config->mpiConfig.nb_process) { // Loop on the eikonal to compute (spread them over all processors)
+      if (i<numberOfShots) { // This eikonal is for P waves
         if(config->verbose2)
           std::cout << "     Eikonal P for shot number " << i+1 << " on " << numberOfShots << " ..."<< std::endl;
-        indexP.push_back(i);
- 
-        eikonal3d(&tt3dP,&velModel,config,i,false); 
- 
-        //Calculate the P waves travel times everywhere on the mesh (put them on tt3dP) for the shot number i
-        for(int j=0;j<numberOfStations;j++) 
-          arrivalTimes.timesP.push_back(getTime(&tt3dP,config->data.coordStations[j],&velModel));
-
+        indexP.push_back(i); // Save in indexP the index of the shot calculated
+        eikonal3d(&tt3dP,&velModel,config,i,false); // Calculate the P waves travel times everywhere on the mesh (put them on tt3dP) for the shot number calculated
+        arrivalTimesPforCurrentShot.clear();
+        for(int j=0;j<numberOfStations;j++) {
+          arrivalTimes.timesP.push_back(getTime(&tt3dP,config->data.coordStations[j],&velModel,i));
+          arrivalTimesPforCurrentShot.push_back(getTime(&tt3dP,config->data.coordStations[j],&velModel,i));
+        }
+        // (above) Save the arrival times at the receivers for the shot calculated by this proc
         if (config->recalculateT0) {
           t0=0.0;
-          int nUsedP=0;  // Number of travel times used for P waves
-          for(int k=0;k<(int)arrivalTimes.timesP.size();k++) { // Calculation of t0
-            int idxP=indexP[(int)floor(k/numberOfStations)]*numberOfStations+k-numberOfStations*(int)floor(k/numberOfStations); // index of the arrival time
+          int nUsedP=0;  // Number of travel times used for P waves (some data travel times can be < 0, meaning that we don't know them)
+          for(int k=0;k<(int)arrivalTimesPforCurrentShot.size();k++) { // Calculation of t0
+            int idxP=i*numberOfStations+k;
             if (config->data.times.timesP[idxP] > 0.0) {
-              t0+=config->data.times.timesP[idxP]-arrivalTimes.timesP[k];
+              t0+=config->data.times.timesP[idxP]-arrivalTimesPforCurrentShot[k];//arrivalTimes.timesP[k];
               nUsedP++;
             }
           }
-          t0=t0/nUsedP;
-   //       #ifdef PAR
-            // Send t0 to the process that will calculate the eikonal S for the same shot :
-   //         MPI_Send(&t0, 1, MPI_DOUBLE, config->mpiConfig.rank+numberOfShots, config->mpiConfig.rank, MPI_COMM_WORLD);
-   //       #endif
-   //          std::cout << "     t0 for shot " << i+1 << " (P waves) : "<< t0 << std::endl;
+          t0P.push_back(t0/nUsedP);
         }
-      } 
+        else {
+          t0P.push_back(0.0);
+        }
+      } // At this point each processor has calculated the travel times and the t0 corresponding to some shots
       else { // S waves
         if(config->verbose2)
           std::cout << "     Eikonal S for shot number " << i+1-numberOfShots << " on " << numberOfShots << " ..."<< std::endl;
         indexS.push_back(i-numberOfShots);
         eikonal3d(&tt3dS,&velModel,config,i-numberOfShots,true); 
         // Calculate the S waves travel times everywhere on the mesh (put them on tt3dS) for the shot number i
-        for(int j=0;j<numberOfStations;j++) 
-          arrivalTimes.timesS.push_back(getTime(&tt3dS,config->data.coordStations[j],&velModel));
-       
+        arrivalTimesSforCurrentShot.clear();
+        for(int j=0;j<numberOfStations;j++) {
+          arrivalTimes.timesS.push_back(getTime(&tt3dS,config->data.coordStations[j],&velModel,i-numberOfShots));
+          arrivalTimesSforCurrentShot.push_back(getTime(&tt3dS,config->data.coordStations[j],&velModel,i-numberOfShots));
+        }
         if (config->recalculateT0) {
           t0=0.0;
-          int nUsedS=0;  // Number of travel times used for P waves
-          for(int k=0;k<(int)arrivalTimes.timesS.size();k++) { // Calculation of t0
-            int idxS=indexS[(int)floor(k/numberOfStations)]*numberOfStations+k-numberOfStations*(int)floor(k/numberOfStations); // index of the arrival time
+          int nUsedS=0;  // Number of travel times used for S waves
+          for(int k=0;k<(int)arrivalTimesSforCurrentShot.size();k++) { // Calculation of t0
+            int idxS=(i-numberOfShots)*numberOfStations+k;
             if (config->data.times.timesS[idxS] > 0.0) {
-              t0+=config->data.times.timesS[idxS]-arrivalTimes.timesS[k];
+              t0+=config->data.times.timesS[idxS]-arrivalTimesSforCurrentShot[k]; //arrivalTimes.timesS[k];
               nUsedS++;
             }
           }
-          t0=t0/nUsedS;
-   //       std::cout << "     t0 for shot " << i+1-numberOfShots << " (S waves) : " << t0 << std::endl;
+          t0S.push_back(t0/nUsedS);
         }
-    //    #ifdef PAR
-    //      if (config->recalculateT0) {
-    //        MPI_Status status;
-            // Receive t0 from the process that has calculated the eikonal P for the same shot :
-    //        MPI_Recv(&t0, 1, MPI_DOUBLE,  config->mpiConfig.rank-numberOfShots, config->mpiConfig.rank-numberOfShots, MPI_COMM_WORLD, &status);
-    //      }
-    //    #endif
-      }  
+        else {
+          t0S.push_back(0.0);
+        }
+      }
     }
-
-    for(int k=0;k<(int)arrivalTimes.timesP.size();k++) { // Loop on the P wave travel times calculated
-      int idxP=indexP[(int)floor(k/numberOfStations)]*numberOfStations+k-numberOfStations*(int)floor(k/numberOfStations); // index of the arrival time corresponding to the one calculated. 
-      double diffP=0.0;
+    double diffP=0.0,diffS=0.0;
+    for(int k=0;k<(int)arrivalTimes.timesP.size();k++) { // Loop on the P wave travel times calculated by this proc
+      int idxP=indexP[(int)floor(k/numberOfStations)]*numberOfStations+k-numberOfStations*(int)floor(k/numberOfStations); // Position corresponding to that travel time in the data file (picked first arrival times)
+      int idxShotP = (int)floor(k/numberOfStations); // index of the shot (for that proc)
       if (config->data.times.timesP[idxP] > 0.0)
-        diffP= config->data.times.timesP[idxP]-(t0+arrivalTimes.timesP[k]);
-   //   std::cout << " config->data.times.timesP[" << idxP << "]  : " << config->data.times.timesP[idxP] << "  arrivalTimes.timesP[" << k << "] : " << arrivalTimes.timesP[k] << "  Diff : " << diffP << std::endl; 
+        diffP = config->data.times.timesP[idxP]-(t0P[idxShotP]+arrivalTimes.timesP[k]);
       sumP+=pow(diffP/config->data.sigmaP,2.0)/2.0; // sum of the squares of the differences between the P wave first arrival times and the data
     }
     if(config->swaves) { 
       for(int k=0;k<(int)arrivalTimes.timesS.size();k++) { // Loop on the S wave travel times calculated
         int idxS=indexS[(int)floor(k/numberOfStations)]*numberOfStations+k-numberOfStations*(int)floor(k/numberOfStations); // index of the arrival time corresponding to the one calculated
-        double diffS=0.0;
+        int idxShotS = (int)floor(k/numberOfStations); // index of the shot (for that proc)
         if (config->data.times.timesS[idxS] > 0.0)
-          diffS= config->data.times.timesS[idxS]-(t0+arrivalTimes.timesS[k]);
-    //    std::cout << " config->data.times.timesS[" << idxS << "]  : " << config->data.times.timesS[idxS] << "  arrivalTimes.timesS[" << k << "] : " << arrivalTimes.timesS[k] << "  Diff : " << diffS << std::endl;   
+          diffS = config->data.times.timesS[idxS]-(t0S[idxShotS]+arrivalTimes.timesS[k]);
         sumS+=pow(diffS/config->data.sigmaS,2.0)/2.0; // sum of the squares of the differences between the P wave first arrival times
       }
     }
     #ifdef PAR
       MPI_Barrier(MPI_COMM_WORLD);
-      if(config->swaves) { 
-        MPI_Allreduce(&sumP,&totalSumP,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD) ; 
+      MPI_Allreduce(&sumP,&totalSumP,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD) ;
+      if(config->swaves)
         MPI_Allreduce(&sumS,&totalSumS,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD) ; 
-      }
-      else 
-        MPI_Allreduce(&sumP,&totalSumP,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD) ; 
     #else 
       totalSumP=sumP;
       totalSumS=sumS;
@@ -385,11 +455,12 @@ double energy(State* state,Chain* chain,Configuration* config)
       std::cout << "      Energy : " << E << "  (sumP : " << totalSumP << "  sumS : " << totalSumS << "  Ep : " << config->data.Ep << ")  E*T : " << E*chain->T << ")" << std::endl;
     }
   }
+  if(config->verbose1 && config->mpiConfig.rank == 0)
+    std::cout << "End of function energy" << std::endl;
   delete velModel.velP;
   if (config->swaves)
     delete velModel.velS;
   return E;
-  getchar();
 }
 
 std::vector<int> makeIndex(Chain* chain, Configuration* config)
@@ -876,15 +947,16 @@ return averager
 
 */
   double exponent = 0.0;
-  const char* stringExponent;
-  mpfr_t weight,temp; // Declare two numbers coded with 256 bytes
-  mpfr_inits2 (PREC,weight,temp,(mpfr_ptr) 0); // and initialize them with precision 256
+  bool debug = false;
+  mpfr_t weight,temp,tempVpVs; // Declare three numbers coded with 256 bytes
+  mpfr_inits2 (PREC,weight,temp,tempVpVs,(mpfr_ptr) 0); // and initialize them with precision 256
   // Initialize these vectors back to 0
   std::fill(run->averageP.begin(), run->averageP.end(), 0.0);
   std::fill(run->varP.begin(), run->varP.end(), 0.0);
   if(config->swaves) {
     std::fill(run->averageS.begin(), run->averageS.end(), 0.0);
     std::fill(run->varS.begin(), run->varS.end(), 0.0);
+    std::fill(run->varVpVs.begin(), run->varVpVs.end(), 0.0);
   }
   for (int iChain=config->nbt-1;iChain>=0;iChain--) { // Loop on the chains
     //std::cout << "Chain : " << iChain << " T:" << run->chains[iChain]->T << std::endl;
@@ -892,39 +964,63 @@ return averager
     std::vector<double> averageOldP, averageOldS;
     std::vector<double> sortedProfilesP, sortedProfilesS;
     exponent = -run->chains[iChain]->states.back().E*run->chains[iChain]->T*(1.0 - 1.0/run->chains[iChain]->T); // For example -15635.15
-    stringExponent = convertDoubleToChar(exponent); // For example "-15635.15"
-    mpfr_set_str(temp,stringExponent,10,MPFR_RNDN); // Variable where we store, value as a char*, decimal base, rounding option
+    if (debug)
+      std::cout << "exponent: " << exponent << std::endl;
+      
+    std::string strExponent = to_string(exponent);
+    if (debug)
+      std::cout << "strexponent: " << strExponent << std::endl;
+
+    // Cstring:
+    char stringExponent[50];
+    std::strcpy( stringExponent, strExponent.c_str() );
+     
+    //const char* stringExponent = convertDoubleToChar(exponent); // For example "-15635.15"
+    if (debug) {
+      std::cout << "hum: " << strlen(stringExponent) << std::endl;
+      for( int k = 0 ; k <  (int)strlen(stringExponent) ; k ++ ){
+       	std::cout << stringExponent[k]; 
+	    }
+      std::cout << std::endl;
+    }
+    mpfr_set_str(temp,stringExponent,10,RND); // Variable where we store, value as a char*, decimal base, rounding option
+    mpfr_set_str(tempVpVs,stringExponent,10,RND); // Variable where we store, value as a char*, decimal base, rounding option
     if (iChain == 0)
-      mpfr_init_set_d(weight,1.0,MPFR_RNDN); // Set weight to 1
+      mpfr_init_set_d(weight,1.0,RND); // Set weight to 1
     else
-      mpfr_exp(weight,temp,MPFR_RNDN); // exp(-15635.15) : weight = exp(-run->chains[iChain]->states.back().E*run->chains[iChain]->T*(1.0 - 1.0/run->chains[iChain]->T));
-    mpfr_add(run->chains[iChain]->sumOfweights, run->chains[iChain]->sumOfweights, weight, MPFR_RNDN); // run->chains[iChain]->sumOfweights = run->chains[iChain]->sumOfweights + weight;
-    //std::cout << "   Last state energy: " << run->chains[iChain]->states.back().E << std::endl;
-    //std::cout << "   Weight: " << std::endl;
-    //mpfr_out_str(stdout,10,PREC,weight,MPFR_RNDN);
-    //std::cout << std::endl;
-    //std::cout << "   Sum of weights: " << std::endl;
-    //mpfr_out_str(stdout,10,PREC,run->chains[iChain]->sumOfweights,MPFR_RNDN);
-    //std::cout << std::endl;
+      mpfr_exp(weight,temp,RND); // exp(-15635.15) : weight = exp(-run->chains[iChain]->states.back().E*run->chains[iChain]->T*(1.0 - 1.0/run->chains[iChain]->T));
+    mpfr_add(run->chains[iChain]->sumOfweights, run->chains[iChain]->sumOfweights, weight, RND); // run->chains[iChain]->sumOfweights = run->chains[iChain]->sumOfweights + weight;
+    if (debug) {
+      std::cout << "   Last state energy: " << run->chains[iChain]->states.back().E << std::endl;
+      std::cout << "   Temp: " << std::endl;
+      mpfr_out_str(stdout,10,PREC,temp,RND);
+      std::cout << std::endl;
+      std::cout << "   Weight: " << std::endl;
+      mpfr_out_str(stdout,10,PREC,weight,RND);
+      std::cout << std::endl;
+      std::cout << "   Sum of weights: " << std::endl;
+      mpfr_out_str(stdout,10,PREC,run->chains[iChain]->sumOfweights,RND);
+      std::cout << std::endl;
+    }
     for (int iz=0;iz<config->data.nzFilt-1;iz++) {
       averageOldP.push_back(run->chains[iChain]->averageP[iz]);
       if(config->swaves)
         averageOldS.push_back(run->chains[iChain]->averageS[iz]);
     }
-    // run->chains[iChain]->profilesP[iz].back() -> Current P waves velocity at depth z
+    //run->chains[iChain]->profilesP[iz].back() -> Current P waves velocity at depth z
     for (int iz=0;iz<config->data.nzFilt-1;iz++) {
       run->chains[iChain]->averageP[iz]=run->chains[iChain]->averageP[iz]+(run->chains[iChain]->profilesP[iz].back()-run->chains[iChain]->averageP[iz])/((double)i+1.0);
-	  //if (iz == 5) {
-		//std::cout << "  run->chains[iChain]->averageP[iz] " << run->chains[iChain]->averageP[iz] << std::endl;
-    	//std::cout << "  run->chains[iChain]->profilesP[iz].back() " << run->chains[iChain]->profilesP[iz].back() << std::endl;
-        //std::cout << "  before run->chains[iChain]->varP[iz]: " << run->chains[iChain]->varP[iz] << std::endl;
-        //std::cout << "  run->chains[iChain]->profilesP[iz].back()-averageOldP[iz]: " << run->chains[iChain]->profilesP[iz].back()-averageOldP[iz] << std::endl;
-        //std::cout << "  run->chains[iChain]->profilesP[iz].back()-run->chains[iChain]->averageP[iz]: " << run->chains[iChain]->profilesP[iz].back()-run->chains[iChain]->averageP[iz] << std::endl;
-      //}
+	  if (iz == 5 and debug) {
+        std::cout << "  run->chains[iChain]->averageP[iz] " << run->chains[iChain]->averageP[iz] << std::endl;
+        std::cout << "  run->chains[iChain]->profilesP[iz].back() " << run->chains[iChain]->profilesP[iz].back() << std::endl;
+        std::cout << "  before run->chains[iChain]->varP[iz]: " << run->chains[iChain]->varP[iz] << std::endl;
+        std::cout << "  run->chains[iChain]->profilesP[iz].back()-averageOldP[iz]: " << run->chains[iChain]->profilesP[iz].back()-averageOldP[iz] << std::endl;
+        std::cout << "  run->chains[iChain]->profilesP[iz].back()-run->chains[iChain]->averageP[iz]: " << run->chains[iChain]->profilesP[iz].back()-run->chains[iChain]->averageP[iz] << std::endl;
+      }
       run->chains[iChain]->varP[iz]=run->chains[iChain]->varP[iz]+(run->chains[iChain]->profilesP[iz].back()-averageOldP[iz])*(run->chains[iChain]->profilesP[iz].back()-run->chains[iChain]->averageP[iz]);
-	  //if (iz == 5) {
-        //std::cout << "  after run->chains[iChain]->varP[iz]: " << run->chains[iChain]->varP[iz] << std::endl;
-      //}
+	    if (iz == 5 and debug) {
+        std::cout << "  after run->chains[iChain]->varP[iz]: " << run->chains[iChain]->varP[iz] << std::endl;
+      }
       nPoints=(int)run->chains[iChain]->profilesP[iz].size(); // Number of profiles generated
       nOut=nPoints*(1.0-config->qp); // Number of points out of the quantile
       idxInf=floor(nOut/2.0); // index of the lowest velocity on the quantile
@@ -933,25 +1029,25 @@ return averager
       std::sort (sortedProfilesP.begin(), sortedProfilesP.end());  // We sort the values (after having used the last value!)
       run->chains[iChain]->qInfP[iz]=sortedProfilesP[idxInf];
       run->chains[iChain]->qSupP[iz]=sortedProfilesP[idxSup];
-      //if (iz == 5) {
-         //std::cout << "   Velocity value: " << run->chains[iChain]->profilesP[iz].back() << std::endl;
-         //std::cout << "   Dot product: " << std::endl;
-         //mpfr_out_str(stdout,10,PREC,run->chains[iChain]->dotProductP[iz],MPFR_RNDN);
-         //std::cout << std::endl;
-      //}
-      mpfr_mul_d(temp,weight,run->chains[iChain]->profilesP[iz].back(),MPFR_RNDN); // Perform temp = run->chains[iChain]->profilesP[iz].back()*weight;
-      mpfr_add(run->chains[iChain]->dotProductP[iz],run->chains[iChain]->dotProductP[iz],temp,MPFR_RNDN); // Perform run->chains[iChain]->dotProductP[iz]=run->chains[iChain]->dotProductP[iz] + temp
-      //if (iz == 5) {
-         //std::cout << "   Dot product: " << std::endl;
-         //mpfr_out_str(stdout,10,PREC,run->chains[iChain]->dotProductP[iz],MPFR_RNDN);
-         //std::cout << std::endl;
-        //std::cout << "   Weighted average: " << run->chains[iChain]->weightedAverageP[iz] << std::endl;
-	  //}
-	  mpfr_div(temp,run->chains[iChain]->dotProductP[iz],run->chains[iChain]->sumOfweights,MPFR_RNDN); // Perform temp = run->chains[iChain]->dotProductP[iz]/run->chains[iChain]->sumOfweights
+      if (iz == 5 and debug) {
+         std::cout << "   Velocity value: " << run->chains[iChain]->profilesP[iz].back() << std::endl;
+         std::cout << "   Dot product: " << std::endl;
+         mpfr_out_str(stdout,10,PREC,run->chains[iChain]->dotProductP[iz],RND);
+         std::cout << std::endl;
+      }
+      mpfr_mul_d(temp,weight,run->chains[iChain]->profilesP[iz].back(),RND); // Perform temp = run->chains[iChain]->profilesP[iz].back()*weight;
+      mpfr_add(run->chains[iChain]->dotProductP[iz],run->chains[iChain]->dotProductP[iz],temp,RND); // Perform run->chains[iChain]->dotProductP[iz]=run->chains[iChain]->dotProductP[iz] + temp
+      if (iz == 5  and debug) {
+         std::cout << "   Dot product: " << std::endl;
+         mpfr_out_str(stdout,10,PREC,run->chains[iChain]->dotProductP[iz],RND);
+         std::cout << std::endl;
+        std::cout << "   Weighted average: " << run->chains[iChain]->weightedAverageP[iz] << std::endl;
+	  }
+	  mpfr_div(temp,run->chains[iChain]->dotProductP[iz],run->chains[iChain]->sumOfweights,RND); // Perform temp = run->chains[iChain]->dotProductP[iz]/run->chains[iChain]->sumOfweights
 	  // At this point temp shoud be big enough to be converted back to a double
-	  run->chains[iChain]->weightedAverageP[iz]=mpfr_get_d(temp,MPFR_RNDN); // run->chains[iChain]->weightedAverageP[iz]=run->chains[iChain]->dotProductP[iz]/run->chains[iChain]->sumOfweights;
-      //if (iz == 5)
-         //std::cout << "   Weighted average: " << run->chains[iChain]->weightedAverageP[iz] << std::endl;
+	  run->chains[iChain]->weightedAverageP[iz]=mpfr_get_d(temp,RND); // run->chains[iChain]->weightedAverageP[iz]=run->chains[iChain]->dotProductP[iz]/run->chains[iChain]->sumOfweights;
+      if (iz == 5  and debug)
+        std::cout << "   Weighted average: " << run->chains[iChain]->weightedAverageP[iz] << std::endl;
       if(config->swaves) {
         run->chains[iChain]->averageS[iz]=run->chains[iChain]->averageS[iz]+(run->chains[iChain]->profilesS[iz].back()-run->chains[iChain]->averageS[iz])/((double)i+1.0);
         run->chains[iChain]->varS[iz]=run->chains[iChain]->varS[iz]+(run->chains[iChain]->profilesS[iz].back()-averageOldS[iz])*(run->chains[iChain]->profilesS[iz].back()-run->chains[iChain]->averageS[iz]);
@@ -959,82 +1055,178 @@ return averager
         std::sort (sortedProfilesS.begin(), sortedProfilesS.end());  // We sort the values
         run->chains[iChain]->qInfS[iz]=sortedProfilesS[idxInf];
         run->chains[iChain]->qSupS[iz]=sortedProfilesS[idxSup];
-        mpfr_mul_d(temp,weight,run->chains[iChain]->profilesS[iz].back(),MPFR_RNDN); // Perform temp = run->chains[iChain]->profilesS[iz].back()*weight;
-        mpfr_add(run->chains[iChain]->dotProductS[iz],run->chains[iChain]->dotProductS[iz],temp,MPFR_RNDN); // Perform run->chains[iChain]->dotProductS[iz]=run->chains[iChain]->dotSroductP[iz] + temp
-        mpfr_div(temp,run->chains[iChain]->dotProductS[iz],run->chains[iChain]->sumOfweights,MPFR_RNDN); // Perform temp = run->chains[iChain]->dotProductS[iz]/run->chains[iChain]->sumOfweights
+        mpfr_mul_d(temp,weight,run->chains[iChain]->profilesS[iz].back(),RND); // Perform temp = run->chains[iChain]->profilesS[iz].back()*weight;
+        mpfr_add(run->chains[iChain]->dotProductS[iz],run->chains[iChain]->dotProductS[iz],temp,RND); // Perform run->chains[iChain]->dotProductS[iz]=run->chains[iChain]->dotSroductP[iz] + temp
+        mpfr_div(temp,run->chains[iChain]->dotProductS[iz],run->chains[iChain]->sumOfweights,RND); // Perform temp = run->chains[iChain]->dotProductS[iz]/run->chains[iChain]->sumOfweights
 	    // At this point temp shoud be big enough to be converted back to a double
-	    run->chains[iChain]->weightedAverageS[iz]=mpfr_get_d(temp,MPFR_RNDN); // run->chains[iChain]->weightedAverageS[iz]=run->chains[iChain]->dotProductS[iz]/run->chains[iChain]->sumOfweights;
+	    run->chains[iChain]->weightedAverageS[iz]=mpfr_get_d(temp,RND); // run->chains[iChain]->weightedAverageS[iz]=run->chains[iChain]->dotProductS[iz]/run->chains[iChain]->sumOfweights;
       }
     }
     // run->chains[iChain]->varP[iz]=run->chains[iChain]->varP[iz]/((int)run->chains[iChain]->ProfileP[iz].size()-1); -> Done when we write on files
     // run->chains[iChain]->varS[iz]=run->chains[iChain]->varP[iz]/((int)run->chains[iChain]->ProfileS[iz].size()-1); -> Done when we write on files
    
     // std::plus adds together its two arguments: "run->averageP = run->averageP + run->chains[iChain]->weightedAverageP" :
-    //std::cout << "   run->averageP before: " << run->averageP[5] << std::endl;
-    //std::cout << "   run->chains[iChain]->weightedAverageP: " << run->chains[iChain]->weightedAverageP[5] << std::endl;
+    if (debug) {
+      std::cout << "   run->averageP before: " << run->averageP[5] << std::endl;
+      std::cout << "   run->chains[iChain]->weightedAverageP: " << run->chains[iChain]->weightedAverageP[5] << std::endl;
+    }
     std::transform (run->averageP.begin(), run->averageP.end(), run->chains[iChain]->weightedAverageP.begin(), run->averageP.begin(), std::plus<double>());
-    //std::cout << "   run->averageP after: " << run->averageP[5] << std::endl;
+    if (debug)
+      std::cout << "   run->averageP after: " << run->averageP[5] << std::endl;
     if(config->swaves)
       std::transform (run->averageS.begin(), run->averageS.end(), run->chains[iChain]->weightedAverageS.begin(), run->averageS.begin(), std::plus<double>());
   }
   // We want to do: "run->averageP = run->averageP / config->nbt" :
-  //std::cout << std::endl << "AVERAGE P " << run->averageP[5] << std::endl;
+  if (debug)
+    std::cout << std::endl << "AVERAGE P " << run->averageP[5] << std::endl;
   std::transform(run->averageP.begin(), run->averageP.end(), run->averageP.begin(),std::bind1st(std::multiplies<double>(),1.0/config->nbt));
-  //std::cout << "AVERAGE P " << run->averageP[5] << std::endl << std::endl;
+  if (debug)
+    std::cout << "AVERAGE P " << run->averageP[5] << std::endl << std::endl;
   if(config->swaves)
     std::transform(run->averageS.begin(), run->averageS.end(), run->averageS.begin(),std::bind1st(std::multiplies<double>(),1.0/config->nbt));
   // COMPUTE VARIANCE : //
   for (int iChain=config->nbt-1;iChain>=0;iChain--) { // Loop on the chains
     exponent = -run->chains[iChain]->states.back().E*run->chains[iChain]->T*(1.0 - 1.0/run->chains[iChain]->T); // For example -15635.15
-    stringExponent = convertDoubleToChar(exponent); // For example "-15635.15"
-    mpfr_set_str(temp,stringExponent,10,MPFR_RNDN); // Variable where we store, value as a char*, decimal base, rounding option
+    if (debug)
+      std::cout << "exponent: " << exponent << std::endl;
+      
+    std::string strExponent = to_string(exponent);
+    if (debug)
+      std::cout << "strexponent: " << strExponent << std::endl;
+
+    // Cstring:
+    char stringExponent[50];
+    std::strcpy( stringExponent, strExponent.c_str() );
+    // char* stringExponent = convertDoubleToChar(exponent); // For example "-15635.15"
+    if (debug) {
+      std::cout << "hum: " << strlen(stringExponent) << std::endl;
+      for( int k = 0 ; k < (int)strlen(stringExponent) ; k ++ ){
+       	std::cout << stringExponent[k]; 
+	    }
+      std::cout << std::endl;
+    }
+    mpfr_set_str(temp,stringExponent,10,RND); // Variable where we store, value as a char*, decimal base, rounding option
     if (iChain == 0)
-      mpfr_init_set_d(weight,1.0,MPFR_RNDN); // Set weight to 1
+      mpfr_init_set_d(weight,1.0,RND); // Set weight to 1
     else
-      mpfr_exp(weight,temp,MPFR_RNDN); // exp(-15635.15) : weight = exp(-run->chains[iChain]->states.back().E*run->chains[iChain]->T*(1.0 - 1.0/run->chains[iChain]->T));
+      mpfr_exp(weight,temp,RND); // exp(-15635.15) : weight = exp(-run->chains[iChain]->states.back().E*run->chains[iChain]->T*(1.0 - 1.0/run->chains[iChain]->T));
     // weight = expl(-run->chains[iChain]->states.back().E*run->chains[iChain]->T*(1.0 - 1.0/run->chains[iChain]->T)); -> That would work until the -4500 < exponent < 4500
-    //std::cout << "Chain : " << iChain << " T:" << run->chains[iChain]->T << std::endl;
-    //std::cout << "   Last state energy: " << run->chains[iChain]->states.back().E << std::endl;
-    //std::cout << "   Weight: " << std::endl;
-    //mpfr_out_str(stdout,10,PREC,weight,MPFR_RNDN);
-    //std::cout << std::endl;
-    //std::cout << std::endl;
-    //std::cout << "   Sum of weights: " << std::endl;
-    //mpfr_out_str(stdout,10,PREC,run->chains[iChain]->sumOfweights,MPFR_RNDN);
-    //std::cout << std::endl;
+    if (debug) {
+      std::cout << "Chain : " << iChain << " T:" << run->chains[iChain]->T << std::endl;
+      std::cout << "   Last state energy: " << run->chains[iChain]->states.back().E << std::endl;
+      std::cout << "   Temp: " << std::endl;
+      mpfr_out_str(stdout,10,PREC,temp,RND);
+      std::cout << std::endl;
+      std::cout << "   Weight: " << std::endl;
+      mpfr_out_str(stdout,10,PREC,weight,RND);
+      std::cout << std::endl;
+      std::cout << std::endl;
+      std::cout << "   Sum of weights: " << std::endl;
+      mpfr_out_str(stdout,10,PREC,run->chains[iChain]->sumOfweights,RND);
+      std::cout << std::endl;
+    }
     // run->chains[iChain]->profilesP[iz].back() -> Current P waves velocity at depth z
     for (int iz=0;iz<config->data.nzFilt-1;iz++) {
-      mpfr_mul_d(temp,weight,pow(run->chains[iChain]->profilesP[iz].back()-run->averageP[iz],2.0),MPFR_RNDN); // Perform temp = weight*pow(run->chains[iChain]->profilesP[iz].back()-run->averageP[iz],2.0)
-      mpfr_add(run->chains[iChain]->dotProductVarP[iz],run->chains[iChain]->dotProductVarP[iz],temp,MPFR_RNDN); // Perform run->chains[iChain]->dotProductVarP[iz]=run->chains[iChain]->dotProductVarP[iz] + temp
-	  mpfr_div(temp,run->chains[iChain]->dotProductVarP[iz],run->chains[iChain]->sumOfweights,MPFR_RNDN); // Perform temp = run->chains[iChain]->dotProductVarP[iz]/run->chains[iChain]->sumOfweights
+      mpfr_mul_d(temp,weight,pow(run->chains[iChain]->profilesP[iz].back()-run->averageP[iz],2.0),RND); // Perform temp = weight*pow(run->chains[iChain]->profilesP[iz].back()-run->averageP[iz],2.0)
+      mpfr_add(run->chains[iChain]->dotProductVarP[iz],run->chains[iChain]->dotProductVarP[iz],temp,RND); // Perform run->chains[iChain]->dotProductVarP[iz]=run->chains[iChain]->dotProductVarP[iz] + temp
+      mpfr_div(temp,run->chains[iChain]->dotProductVarP[iz],run->chains[iChain]->sumOfweights,RND); // Perform temp = run->chains[iChain]->dotProductVarP[iz]/run->chains[iChain]->sumOfweights
 	  // At this point temp shoud be big enough to be converted back to a double
-	  run->chains[iChain]->weightedVarP[iz]=mpfr_get_d(temp,MPFR_RNDN); // run->chains[iChain]->weightedAverageP[iz]=run->chains[iChain]->dotProductP[iz]/run->chains[iChain]->sumOfweights;
+      run->chains[iChain]->weightedVarP[iz]=mpfr_get_d(temp,RND); // run->chains[iChain]->weightedAverageP[iz]=run->chains[iChain]->dotProductP[iz]/run->chains[iChain]->sumOfweights;
       if(config->swaves) {
-	    mpfr_mul_d(temp,weight,pow(run->chains[iChain]->profilesS[iz].back()-run->averageS[iz],2.0),MPFR_RNDN); // Perform temp = weight*pow(run->chains[iChain]->profilesP[iz].back()-run->averageP[iz],2.0)
-        mpfr_add(run->chains[iChain]->dotProductVarS[iz],run->chains[iChain]->dotProductVarS[iz],temp,MPFR_RNDN); // Perform run->chains[iChain]->dotProductVarP[iz]=run->chains[iChain]->dotProductVarP[iz] + temp
-	    mpfr_div(temp,run->chains[iChain]->dotProductVarS[iz],run->chains[iChain]->sumOfweights,MPFR_RNDN); // Perform temp = run->chains[iChain]->dotProductVarP[iz]/run->chains[iChain]->sumOfweights
-	    // At this point temp shoud be big enough to be converted back to a double
-	    run->chains[iChain]->weightedVarS[iz]=mpfr_get_d(temp,MPFR_RNDN); // run->chains[iChain]->weightedAverageP[iz]=run->chains[iChain]->dotProductP[iz]/run->chains[iChain]->sumOfweights;
+        mpfr_mul_d(temp,weight,pow(run->chains[iChain]->profilesS[iz].back()-run->averageS[iz],2.0),RND); // Perform temp = weight*pow(run->chains[iChain]->profilesP[iz].back()-run->averageP[iz],2.0)
+        mpfr_mul_d(tempVpVs,weight,pow(run->chains[iChain]->profilesP[iz].back()/run->chains[iChain]->profilesS[iz].back()-run->averageP[iz]/run->averageS[iz],2.0),RND);
+        mpfr_add(run->chains[iChain]->dotProductVarS[iz],run->chains[iChain]->dotProductVarS[iz],temp,RND); // Perform run->chains[iChain]->dotProductVarP[iz]=run->chains[iChain]->dotProductVarP[iz] + temp
+        mpfr_add(run->chains[iChain]->dotProductVarVpVs[iz],run->chains[iChain]->dotProductVarVpVs[iz],tempVpVs,RND);
+        mpfr_div(temp,run->chains[iChain]->dotProductVarS[iz],run->chains[iChain]->sumOfweights,RND); // Perform temp = run->chains[iChain]->dotProductVarP[iz]/run->chains[iChain]->sumOfweights
+        mpfr_div(tempVpVs,run->chains[iChain]->dotProductVarVpVs[iz],run->chains[iChain]->sumOfweights,RND);
+	      // At this point temp shoud be big enough to be converted back to a double
+        run->chains[iChain]->weightedVarS[iz]=mpfr_get_d(temp,RND); // run->chains[iChain]->weightedAverageP[iz]=run->chains[iChain]->dotProductP[iz]/run->chains[iChain]->sumOfweights;
+        run->chains[iChain]->weightedVarVpVs[iz]=mpfr_get_d(tempVpVs,RND);
       }
     }
     // std::plus adds together its two arguments: "run->varP = run->varP + run->chains[iChain]->weightedVarP;" :
-    //std::cout << "   var " << run->varP[5] << std::endl;
+    if (debug)
+      std::cout << "   var " << run->varP[5] << std::endl;
     std::transform (run->varP.begin(), run->varP.end(), run->chains[iChain]->weightedVarP.begin(), run->varP.begin(), std::plus<double>());
-    //std::cout << "   var " << run->varP[5] << std::endl;
-    //std::cout << "   sqrt(var) " << sqrt(run->varP[5]) << std::endl;
-    if(config->swaves)
+    if (debug) {
+      std::cout << "   var " << run->varP[5] << std::endl;
+      std::cout << "   sqrt(var) " << sqrt(run->varP[5]) << std::endl;
+    }
+    if(config->swaves) {
       std::transform (run->varS.begin(), run->varS.end(), run->chains[iChain]->weightedVarS.begin(), run->varS.begin(), std::plus<double>());
+      std::transform (run->varVpVs.begin(), run->varVpVs.end(), run->chains[iChain]->weightedVarVpVs.begin(), run->varVpVs.begin(), std::plus<double>());
+    }
   }
   // We want to do: "run->varP = run->varP / config->nbt" :
-  //std::cout << std::endl << "VAR " << run->varP[5] << std::endl;
+  if (debug)
+    std::cout << std::endl << "VAR " << run->varP[5] << std::endl;
   std::transform(run->varP.begin(), run->varP.end(), run->varP.begin(),std::bind1st(std::multiplies<double>(),1.0/config->nbt));
-  //std::cout << "VAR " << run->varP[5] << std::endl << std::endl;
-  //std::cout << "sqrt(VAR) " << sqrt(run->varP[5]) << std::endl << std::endl;
-  if(config->swaves)
+  if (debug) {
+    std::cout << "VAR " << run->varP[5] << std::endl << std::endl;
+    std::cout << "sqrt(VAR) " << sqrt(run->varP[5]) << std::endl << std::endl;
+  }
+  if(config->swaves) {
     std::transform(run->varS.begin(), run->varS.end(), run->varS.begin(),std::bind1st(std::multiplies<double>(),1.0/config->nbt));
+    std::transform(run->varVpVs.begin(), run->varVpVs.end(), run->varVpVs.begin(),std::bind1st(std::multiplies<double>(),1.0/config->nbt));
+  }
 
   mpfr_clear(weight);
   mpfr_clear(temp);
+}
+
+void isThisConfigOk(VelocityModel* velModel, Configuration* config)
+// Set refVelModel->OK to 1 if we are precise enough with the eikonal and this config. We set the velocity to 1 and we check that
+// we obtain the correct distance between sources and receivers (tolerance MAX_DIFF_TO_BE_OK)
+{
+  if(config->verbose1 && config->mpiConfig.rank == 0) //config->verbose1 && 
+    std::cout << "      If this configuration ok ? (nx = " << velModel->nx << " ny = " << velModel->ny << " nz = " << velModel->nz << ")" << std::endl;
+  int OK = 1;
+  velModel->velP= new tab3d<double>(velModel->nz-1,velModel->nx-1,velModel->ny-1,1.0); // Create a (nz-1,nx-1,ny-1) mesh and initialize every cell at 1.0 
+  tab3d<double> tt3d(velModel->nz,velModel->nx,velModel->ny,1.0); // Will contain the P waves arrival times. Initialize every cell at 1.0 
+  ArrivalTimes arrivalTimes; // Will contain the arrival times at receivers positions
+  ArrivalTimes syntheticArrivalTimes; // Will contain the synthetic arrival times at receivers positions (for velocity = 1 --> distance in meters)
+  velModel->averageDiff = 0.0;
+  int nOK = 0;
+  for(int shotNumber=0;shotNumber<(int)config->data.coordShots.size();shotNumber++) 
+  {
+    if(config->verbose2 && config->mpiConfig.rank == 0)
+      std::cout << "        Eikonal computing for shot number " << shotNumber+1 << " on " << config->data.coordShots.size() << std::endl;
+
+  // Calculate the P waves travel times everywhere on the mesh (put them on tt3dP) for the shot number shotNumber :
+    eikonal3d(&tt3d,velModel,config,shotNumber,false); 
+    for(int j=0;j<(int)config->data.coordStations.size();j++) {
+      syntheticArrivalTimes.timesP.push_back(getDistance(config->data.coordShots[shotNumber],config->data.coordStations[j]));
+      arrivalTimes.timesP.push_back(getTime(&tt3d,config->data.coordStations[j],velModel,shotNumber));
+      velModel->averageDiff += fabs(syntheticArrivalTimes.timesP.back() - arrivalTimes.timesP.back());
+      if(config->verbose2 && config->mpiConfig.rank == 0)
+        std::cout << "          Receiver number " << j << ": " << syntheticArrivalTimes.timesP.back() << " " << arrivalTimes.timesP.back() << "  " <<  fabs(syntheticArrivalTimes.timesP.back() - arrivalTimes.timesP.back());
+      if (fabs(syntheticArrivalTimes.timesP.back() - arrivalTimes.timesP.back()) > MAX_DIFF_TO_BE_OK) {
+        OK = 0;
+        if(config->verbose2 && config->mpiConfig.rank == 0)
+          std::cout << " --> non OK!";
+      }
+      else {
+        nOK++;
+        if(config->verbose2 && config->mpiConfig.rank == 0)
+          std::cout << " --> OK!";
+      }
+      if(config->verbose2 && config->mpiConfig.rank == 0)
+        std::cout << std::endl;
+    }
+  }
+  velModel->percentOk = 100.0*(double)nOK/((double)config->data.coordStations.size()*(double)config->data.coordShots.size());
+  velModel->averageDiff /= (double)config->data.coordStations.size()*(double)config->data.coordShots.size();
+  
+  delete velModel->velP;
+  velModel->OK = OK;
+  if (OK) {
+    if(config->verbose1 && config->mpiConfig.rank == 0)
+      std::cout << "       -> This configuration is OK. AverageDiff:" << velModel->averageDiff << "  percentOk:" << velModel->percentOk << std::endl;
+  }
+  else {
+    if(config->verbose1 && config->mpiConfig.rank == 0)
+      std::cout << "       -> This configuration is not OK! AverageDiff:" << velModel->averageDiff << "  percentOk:" << velModel->percentOk << std::endl;
+  }
 }
 
 void finalizeRun(Run* run)

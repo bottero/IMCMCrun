@@ -42,5 +42,7 @@ void write_two_columns_file(const std::vector<double>* column1, const std::vecto
 // Write a two columns file from two vectors of the same size
 void write_three_columns_file(const std::vector<int>* column1, const std::vector<double>* column2, const std::vector<double>* column3, const std::string name_of_file);
 // Write a three columns file from three vectors of the same size -> just used for prior features
+void write_four_columns_file(const std::vector<int>* column1, const std::vector<double>* column2, const std::vector<double>* column3, const std::vector<double>* column4, const std::string name_of_file);
+// Write a four columns file from four vectors of the same size
 
 #endif /* FILESANDCONTROL_H_ */

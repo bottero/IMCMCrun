@@ -205,10 +205,10 @@ void readConfFile(std::string nameOfConfFile, Configuration* config)
       config->nxref = atoi(iter->second.c_str());
     if (iter->first == "NYREF")
       config->nyref = atoi(iter->second.c_str());
-    if (iter->first == "NUMBER_OF_X_POINTS_TO_DESCRIBE_THE_SMALLEST_DISTANCE_DEFAULT")
-      config->numberOfXpointsToDescribeTheSmallestDistanceDefault = atoi(iter->second.c_str());
-    if (iter->first == "NUMBER_OF_Y_POINTS_TO_DESCRIBE_THE_SMALLEST_DISTANCE_DEFAULT")
-      config->numberOfYpointsToDescribeTheSmallestDistanceDefault = atoi(iter->second.c_str());
+    if (iter->first == "NX_DEFAULT")
+      config->nxDefault = atoi(iter->second.c_str());
+    if (iter->first == "NY_DEFAULT")
+      config->nyDefault = atoi(iter->second.c_str());
     if (iter->first == "NZFILT_DEFAULT")
       config->nzfiltDefault = atoi(iter->second.c_str());
     if (iter->first == "ANALYTICAL_RUN")
@@ -233,7 +233,11 @@ void readConfFile(std::string nameOfConfFile, Configuration* config)
       config->iterationsResiduals = atoi(iter->second.c_str());
     if (iter->first == "ITERATIONS_BEST_PROFILES")
       config->iterationsBestProfiles = atoi(iter->second.c_str());
-    if (iter->first == "NOXPTDTSDVEC") {
+    if (iter->first == "ONLY_CALCULATE_TIMES_FOR_FIRST_GUESS")
+      config->calculateTimesForFirstGuess = atoi(iter->second.c_str());
+    if (iter->first == "RESAMPLE")
+      config->resample = atoi(iter->second.c_str());
+    if (iter->first == "NXVEC") {
       tempString = trim(iter->second);
       int nValGiven = std::count(tempString.begin(), tempString.end(), ',') + 1;
       std::replace(tempString.begin(), tempString.end(), ',', ' ' ); // replace the comas with spaces
@@ -242,11 +246,11 @@ void readConfFile(std::string nameOfConfFile, Configuration* config)
         for (int i=0; i<nValGiven;i++) {
           double temp;
           sline >> temp;
-          config->noXptdtsdVec.push_back(temp);
+          config->nxVec.push_back(temp);
         }
       }
     }
-    if (iter->first == "NOYPTDTSDVEC") {
+    if (iter->first == "NYVEC") {
       tempString = trim(iter->second);
       int nValGiven = std::count(tempString.begin(), tempString.end(), ',') + 1;
       std::replace(tempString.begin(), tempString.end(), ',', ' ' ); // replace the comas with spaces
@@ -255,7 +259,7 @@ void readConfFile(std::string nameOfConfFile, Configuration* config)
         for (int i=0; i<nValGiven;i++) {
           double temp;
           sline >> temp;
-          config->noYptdtsdVec.push_back(temp);
+          config->nyVec.push_back(temp);
         }
       }
     }
@@ -299,8 +303,9 @@ void readConfFile(std::string nameOfConfFile, Configuration* config)
       }
       config->nc.push_back(temp);
     }
-  }  
-  checkConfig(config);  // Check the config
+  }
+  if(config->mpiConfig.rank == 0)
+    checkConfig(config);  // Check the config
   if (config->verbose1 && config->mpiConfig.rank == 0)
     std::cout << "  Configuration file read" << std::endl;
 }
@@ -459,43 +464,43 @@ void findOptimumFirstGuessParameterization(Configuration* config)
       // Coefficients in config->coeffsP[wavelet] (or config->coeffsS[wavelet]) are stored as following
       // config->coeffsP[wavelet] =[Appx(J-1) Detail(J-1) Detail(J-2) .... Detail(0)]
       dwt(config->data.firstGuessP, config->ndwts, config->listOfWavelets[wavelet], config->coeffsP[wavelet],config->flagP[wavelet], config->lengthP[wavelet]); // Performs J-Level DWT
-      if (config->verbose2 && config->mpiConfig.rank == 0) {
-        std::cout << "Wavelet: " << config->listOfWavelets[wavelet] << std::endl;
-        std::cout << "CoeffsP[" << config->listOfWavelets[wavelet] << "] : ";
-        for (std::vector<double>::const_iterator j = config->coeffsP[wavelet].begin(); j != config->coeffsP[wavelet].end(); ++j)
-          std::cout << *j << ' ';
-        std::cout << std::endl;
-      }
+//      if (config->verbose2 && config->mpiConfig.rank == 0) {
+//        std::cout << "Wavelet: " << config->listOfWavelets[wavelet] << std::endl;
+//        std::cout << "CoeffsP[" << config->listOfWavelets[wavelet] << "] : ";
+//        for (std::vector<double>::const_iterator j = config->coeffsP[wavelet].begin(); j != config->coeffsP[wavelet].end(); ++j)
+//          std::cout << *j << ' ';
+//        std::cout << std::endl;
+//      }
       if (config->keep_first_values != 1)
         keepNsignificantValues(&config->coeffsP[wavelet],config->npu); // Keep the N biggest absolute values in vector. Put the others to 0
       else
         keepNfirstValues(&config->coeffsP[wavelet],config->npu); // Keep the N biggest absolute values in vector. Put the others to 0
-      if (config->verbose2 && config->mpiConfig.rank == 0) {
-        std::cout << "CoeffsP[" << config->listOfWavelets[wavelet] << "] : ";
-        for (std::vector<double>::const_iterator j = config->coeffsP[wavelet].begin(); j != config->coeffsP[wavelet].end(); ++j)
-          std::cout << *j << ' ';
-        std::cout << std::endl << std::endl;
-      }
+//      if (config->verbose2 && config->mpiConfig.rank == 0) {
+//        std::cout << "CoeffsP[" << config->listOfWavelets[wavelet] << "] : ";
+//        for (std::vector<double>::const_iterator j = config->coeffsP[wavelet].begin(); j != config->coeffsP[wavelet].end(); ++j)
+//          std::cout << *j << ' ';
+//        std::cout << std::endl << std::endl;
+//      }
       idwt(config->coeffsP[wavelet],config->flagP[wavelet],config->listOfWavelets[wavelet],config->data.filtFirstGuessP[wavelet],config->lengthP[wavelet]);  // Performs IDWT with approximated coefficients
       if (config->swaves) {
         // ******** DISCRETE WAVELET TRANSFORM IMPLEMENTATION*********"
         dwt(config->data.firstGuessS, config->ndwts, config->listOfWavelets[wavelet], config->coeffsS[wavelet],config->flagS[wavelet], config->lengthS[wavelet]); // Performs J-Level DWT
-        if (config->verbose2 && config->mpiConfig.rank == 0) {
-          std::cout << "CoeffsS[" << config->listOfWavelets[wavelet] << "] : ";
-          for (std::vector<double>::const_iterator j = config->coeffsS[wavelet].begin(); j != config->coeffsS[wavelet].end(); ++j)
-            std::cout << *j << ' ';
-          std::cout << std::endl;
-        }
+//        if (config->verbose2 && config->mpiConfig.rank == 0) {
+//          std::cout << "CoeffsS[" << config->listOfWavelets[wavelet] << "] : ";
+//          for (std::vector<double>::const_iterator j = config->coeffsS[wavelet].begin(); j != config->coeffsS[wavelet].end(); ++j)
+//            std::cout << *j << ' ';
+//          std::cout << std::endl;
+//        }
         if (config->keep_first_values != 1)
           keepNsignificantValues(&config->coeffsS[wavelet],config->npu); // Keep the N biggest absolute values in vector. Put the others to 0
         else
           keepNfirstValues(&config->coeffsS[wavelet],config->npu); // Keep the N biggest absolute values in vector. Put the others to 0
-        if (config->verbose2 && config->mpiConfig.rank == 0) {
-          std::cout << "CoeffsS[" << config->listOfWavelets[wavelet] << "] : ";
-          for (std::vector<double>::const_iterator j = config->coeffsS[wavelet].begin(); j != config->coeffsS[wavelet].end(); ++j)
-            std::cout << *j << ' ';
-          std::cout << std::endl << std::endl;
-        }
+//        if (config->verbose2 && config->mpiConfig.rank == 0) {
+//          std::cout << "CoeffsS[" << config->listOfWavelets[wavelet] << "] : ";
+//          for (std::vector<double>::const_iterator j = config->coeffsS[wavelet].begin(); j != config->coeffsS[wavelet].end(); ++j)
+//            std::cout << *j << ' ';
+//          std::cout << std::endl << std::endl;
+//        }
         idwt(config->coeffsS[wavelet],config->flagS[wavelet],config->listOfWavelets[wavelet],config->data.filtFirstGuessS[wavelet],config->lengthS[wavelet]);  // Performs IDWT with approximated coefficients
       }
     }
@@ -632,18 +637,20 @@ void loadFirstGuesses(Configuration* config)
   config->data.nz=config->data.z.size();
   config->ztop=config->data.zp[0];
   config->zbottom=config->data.zp.back();
-
-  findOptimumFirstGuessParameterization(config); // From the first guess velocity profile(s) and given the parameterization scheme
-  // (store in config), determine the best set of coefficients describing it. Store it in config->coeffsP[wavelet] (and config->coeffsS[wavelet]).
-  // Then store the corresponding parameterized profile in config->data.filtFirstGuessP[wavelet] (config->data.filtFirstGuessP[wavelet]).
-  if (config->mpiConfig.rank == 0) {    // (In case of parallel implementation just one process has to create files)
-    for (int wavelet = 0; wavelet < config->nWavelets; wavelet++) { // Loop on the wavelets used
-      write_two_columns_file(&config->data.zp,&config->data.filtFirstGuessP[wavelet], config->outputDir+"filteredFirstGuessP."+config->listOfWavelets[wavelet]+"."+config->code+".dat");
-      if (config->swaves)
-        write_two_columns_file(&config->data.zp,&config->data.filtFirstGuessS[wavelet], config->outputDir+"filteredFirstGuessS."+config->listOfWavelets[wavelet]+"."+config->code+".dat");
+  
+  if (! config->calculateTimesForFirstGuess) {
+    findOptimumFirstGuessParameterization(config); // From the first guess velocity profile(s) and given the parameterization scheme
+    // (store in config), determine the best set of coefficients describing it. Store it in config->coeffsP[wavelet] (and config->coeffsS[wavelet]).
+    // Then store the corresponding parameterized profile in config->data.filtFirstGuessP[wavelet] (config->data.filtFirstGuessP[wavelet]).
+    if (config->mpiConfig.rank == 0) {    // (In case of parallel implementation just one process has to create files)
+      for (int wavelet = 0; wavelet < config->nWavelets; wavelet++) { // Loop on the wavelets used
+        write_two_columns_file(&config->data.zp,&config->data.filtFirstGuessP[wavelet], config->outputDir+"filteredFirstGuessP."+config->listOfWavelets[wavelet]+"."+config->code+".dat");
+        if (config->swaves)
+          write_two_columns_file(&config->data.zp,&config->data.filtFirstGuessS[wavelet], config->outputDir+"filteredFirstGuessS."+config->listOfWavelets[wavelet]+"."+config->code+".dat");
+      }
+      if (config->verbose1)
+        std::cout << "  First guess file loaded (and optimum filtering performed)" << std::endl;
     }
-    if (config->verbose1)
-      std::cout << "  First guess file loaded (and optimum filtering performed)" << std::endl;
   }
 }
 
@@ -735,8 +742,10 @@ void loadData(Configuration* config)
   loadFirstGuesses(config);
   if (config->analyticalRun) // If we perform an analytical run...
     loadRealProfiles(config); // ... load the real profiles
-  else // otherwise... 
-    loadArrivalTimes(config); // we load the arrival times
+  else {// otherwise...
+    if (! config->calculateTimesForFirstGuess) 
+      loadArrivalTimes(config); // we load the arrival times
+  }
   copyDataFiles(config); // Copy the data files used during the simulation in OUTPUT_FILES
   if (config->verbose1 && config->mpiConfig.rank == 0)
     std::cout << "Loading done !" << std::endl << std::endl;
@@ -823,7 +832,6 @@ void generate_profiles_from_prior(Configuration* config)
       std::cout<< "  Wavelet drawn: " << config->listOfWavelets[wavelet] << "..." << std::endl;
     for(int j=0;j<(int)config->data.minParameters[wavelet].size();j++) {  // Loop on the number of parameters that we will modify
       params.push_back(Uniform(config->data.minParameters[wavelet][j],config->data.maxParameters[wavelet][j]));
-      //params.push_back(Uniform(config->data.minParameters[wavelet][j],config->data.maxParameters[wavelet][j])); // TODO remove
       if (config->verbose2 && config->mpiConfig.rank == 0) {
         std::cout<< "  params["<< j <<"] : " << params[j] << "   ";
         std::cout<< "(Uniform between : "<< config->data.minParameters[wavelet][j] <<" and " << config->data.maxParameters[wavelet][j] << ") " << std::endl;
@@ -902,19 +910,20 @@ void designSmallGrid(Configuration* config)
     std::cout << "zmin : " << zmin << " zminFirstGuess : "<< zminFirstGuess << " zmax : " << zmax << " zmaxFirstGuess : "<< zmaxFirstGuess << std::endl;
     exit(0);
   }
-
+  
   double xminGrid = xmin - (xmax-xmin)*config->coordTol;
   double xmaxGrid = xmax + (xmax-xmin)*config->coordTol;
   double yminGrid = ymin - (ymax-ymin)*config->coordTol;
   double ymaxGrid = ymax + (ymax-ymin)*config->coordTol;
-  config->data.xminGrid = xminGrid;
-  config->data.yminGrid = yminGrid;
-  config->data.zminGrid = config->data.z[0];
+  
+  config->data.xminGridGlob = xminGrid;
+  config->data.yminGridGlob = yminGrid;
+  config->data.zminGridGlob = config->data.z[0];
   if(config->verbose2 && config->mpiConfig.rank == 0) {
     std::cout << "  Min x coordinate : " << xmin << " Max x coordinate "<< xmax << " Min y coordinate : " << ymin << " Max y coordinate : "<< ymax << std::endl;
     std::cout << "  Min x of grid : " << xminGrid << " Max x of grid "<< xmaxGrid << " Min y of grid : " << yminGrid << " Max y of grid : "<< ymaxGrid << std::endl;
-    std::cout << "  Min z : " << zmin << " Min z of grid : " << config->data.zminGrid << std::endl;
-    std::cout << "  Max z : " << config->data.z.back() << " Min z of grid : " << config->data.zminGrid << std::endl << std::endl;
+    std::cout << "  Min z : " << zmin << " Min z of grid : " << config->data.zminGridGlob << std::endl;
+    std::cout << "  Max z : " << config->data.z.back() << " Min z of grid : " << config->data.zminGridGlob << std::endl << std::endl;
   }
   // Find min relatives intervals between two stations and/or receivers (expressed as a fraction of the maximum distances xmax and ymax)
   // Concatenate xstat with xshots -> xcoords, and ystat with yshots -> ycoords
@@ -934,14 +943,133 @@ void designSmallGrid(Configuration* config)
   if (dy.size()>0) // If there is distinct coordinates. Otherwise the problem is 2D or 1D! This must not happen! See (**) above
     dymin = *std::min_element(dy.begin(), dy.end()); // Minimum y distances between two stations and/or receivers
   
-  findOptimumGrid(xmaxGrid,ymaxGrid,dxmin,dymin,config); // if config->findOptimumGrid = 1 :
+  if (config->calculateTimesForFirstGuess) {
+    std::cout << "  Min x of grid : " << xminGrid << " Max x of grid "<< xmaxGrid << " Min y of grid : " << yminGrid << " Max y of grid : "<< ymaxGrid << std::endl;
+    config->data.nx=config->nxDefault;
+    config->data.ny=config->nyDefault;
+    config->data.dx = (xmaxGrid-xminGrid)/((float)(config->data.nx-1));
+    config->data.dy = (ymaxGrid-yminGrid)/((float)(config->data.ny-1));
+    // nz, and dz are already known from first guess curves (function loadFirstGuesses)
+  }
+  else
+    findOptimumGrid(xmaxGrid,ymaxGrid,dxmin,dymin,config); // if config->findOptimumGrid = 1 :
   // Filter a first guess curve iteratively and run the eikonal each time to determine nx,ny and nzFilt to use 
   // if config->findOptimumGrid = 0 use : 
-  // noXptdtsd = config->numberOfXpointsToDescribeTheSmallestDistanceDefault
-  // noYptdtsd = config->numberOfYpointsToDescribeTheSmallestDistanceDefault
+  // nx = config->nxDefault
+  // ny = config->nyDefault
   // nzFilt = config->nzfiltDefault
   //
   // --> Then calculate dx,dy and dzFilt
+}
+
+void calculateTimesForFirstGuess(Configuration* config)
+// Runs the eikonal for first guess(es) curves
+{
+
+  if(config->mpiConfig.rank == 0) {
+    std::cout << "For this run we will only calculate the times for the curve(s) given as :" << std::endl;
+    std::cout << config->filesDir+config->name_of_first_guess_P_file << std::endl;
+    if(config->swaves)
+      std::cout << config->filesDir+config->name_of_first_guess_S_file << std::endl;
+    if (config->resample)
+      std::cout << "They will be resampled to NZ = " << config->nzfiltDefault << std::endl; 
+    std::cout << "The sources/receivers given in :" << std::endl; 
+    std::cout << config->filesDir+config->name_of_shots_file << std::endl;
+    std::cout << config->filesDir+config->name_of_stations_file << std::endl;
+  }
+  
+  VelocityModel velModel;    // Will contain the velocity model
+  ArrivalTimes arrivalTimes; // Will contain the P and S waves arrival times at receivers positions
+  std::vector<double> velP1D,velS1D;
+  if (config->resample) {
+    config->data.zFilt=linspace(config->data.z[0],config->data.z.back(),config->nzfiltDefault);
+    // Build zFiltp : it will contains the real positions of the velocities vpFilt calculated after that
+    for(int i=1;i<(int)config->data.zFilt.size();i++) // zFiltp give z in the middle of intervals
+      config->data.zFiltp.push_back(config->data.zFilt[i-1]+(config->data.zFilt[i]-config->data.zFilt[i-1])/2.0);
+    velP1D = downSampleProfile(config->data.firstGuessP,config->data.zp,config->data.zFiltp);
+    if(config->mpiConfig.rank == 0)
+      write_two_columns_file(&config->data.zFiltp,&velP1D, config->outputDir+"downSampledFirstGuessP."+config->code+".dat");
+    double dzFilt=config->data.dz*((double)config->data.nz-1)/((double)config->nzfiltDefault-1.0);
+    velModel.nx = config->data.nx; velModel.ny = config->data.ny; velModel.nz = config->nzfiltDefault;  
+    velModel.dx = config->data.dx; velModel.dy = config->data.dy; velModel.dz = dzFilt;//fabs(config->data.z[1]-config->data.z[0]);
+  }
+  else {
+    velModel.nx = config->data.nx; velModel.ny = config->data.ny; velModel.nz = config->data.nz;  
+    velModel.dx = config->data.dx; velModel.dy = config->data.dy; velModel.dz = config->data.dz;//fabs(config->data.z[1]-config->data.z[0]);
+  }
+  calculateShiftForEachShot(&velModel,config);
+  isThisConfigOk(&velModel,config);
+  //    std::cout << "floor((config->data.coordShots[ishot].x-config->data.xminGridGlob)/config->data.dx) " << floor((config->data.coordShots[ishot].x-velModel.xmin[ishot])/velModel.dx) << std::endl;
+  //  std::cout << "floor((config->data.coordShots[ishot].y-config->data.yminGridGlob)/config->data.dy) " << floor((config->data.coordShots[ishot].y-velModel.ymin[ishot])/velModel.dy) << std::endl;
+  //  std::cout << "floor((config->data.coordShots[ishot].z-config->data.zminGridGlob)/config->data.dz) " << floor((config->data.coordShots[ishot].z-velModel.zmin[ishot])/velModel.dz) << std::endl;
+  //  std::cout << "epsilonX " << epsilonX << std::endl;
+  //  std::cout << "epsilonY " << epsilonY << std::endl;
+  //  std::cout << "epsilonZ " << epsilonZ << std::endl;
+  //  velModel.xmin = config->data.xminGrid; velModel.ymin = config->data.yminGrid; velModel.zmin = config->data.zminGrid;
+  velModel.velP= new tab3d<double>(velModel.nz-1,velModel.nx-1,velModel.ny-1,-1.0); // Create a (nz-1,nx-1,ny-1) mesh and initialize every cell at -1
+  // Copy the file content into the velocity model (extend the 1D profile to obtain a 3D profile) :
+  if (config->resample)
+    meshing(&velP1D,&velModel,false); // Extend this profile on the whole mesh
+  else
+    meshing(&config->data.firstGuessP,&velModel,false); // Extend this profile on the whole mesh
+  
+  std::cout << "Uses NX = " << velModel.nx << " NY = " << velModel.ny << " NZ = " << velModel.nz << std::endl;
+  std::cout << "DX = " << velModel.dx << " DY = " << velModel.dy << " DZ = " << velModel.dz << std::endl;
+  for(int shotNumber=0;shotNumber<(int)config->data.coordShots.size();shotNumber++) {
+    std::cout << "Shot number " << shotNumber << std::endl;
+    std::cout << "  xmin = " << velModel.xmin[shotNumber] << " ymin = " << velModel.ymin[shotNumber]  << " zmin = " << velModel.zmin[shotNumber]  << std::endl;
+  }
+  std::cout << "nSweeps = " << config->nSweeps << " epsin = " << config->epsin << std::endl << std::endl;
+  
+  tab3d<double> tt3dP(velModel.nz,velModel.nx,velModel.ny,1.0); // Will contain the P waves arrival times. Initialize every cell at 1.0 
+  if(config->mpiConfig.rank == 0)
+    std::cout << "Eikonal calculations for P waves... " << std::endl;
+  for(int shotNumber=0;shotNumber<(int)config->data.coordShots.size();shotNumber++) {
+    if(config->mpiConfig.rank == 0)
+      std::cout << "  Shot Number " << shotNumber+1 << " on " << config->data.coordShots.size() << std::endl;  
+    // Calculate the P waves travel times everywhere on the mesh (put them on tt3dP) for the shot number shotNumber :
+    eikonal3d(&tt3dP,&velModel,config,shotNumber,false);
+    for(int j=0;j<(int)config->data.coordStations.size();j++)
+      arrivalTimes.timesP.push_back(getTime(&tt3dP,config->data.coordStations[j],&velModel,shotNumber));
+     // arrivalTimes.timesP.push_back(getTime(&tt3dP,config->data.coordStations[j],&velModel,shotNumber)+0.01*shotNumber); // To create a synthetic case with false t0
+  }
+  delete velModel.velP;
+
+  if(config->swaves) {
+    velModel.velS= new tab3d<double>(velModel.nz-1,velModel.nx-1,velModel.ny-1,-1); // Create a (nz-1,nx-1,ny-1) mesh and initialize every cell at -1
+    if (config->resample) {
+      velS1D = downSampleProfile(config->data.firstGuessS,config->data.zp,config->data.zFiltp);
+      if(config->mpiConfig.rank == 0)
+        write_two_columns_file(&config->data.zFiltp,&velS1D, config->outputDir+"downSampledFirstGuessS."+config->code+".dat");
+      meshing(&velS1D,&velModel,false); // Extend this profile on the whole mesh
+    }
+    else
+      meshing(&config->data.firstGuessS,&velModel,true); // Extend this profile on the whole mesh
+    tab3d<double> tt3dS(velModel.nz,velModel.nx,velModel.ny,1.0); // Will contain the S waves arrival times. Initialize every cell at 1.0 
+    if(config->mpiConfig.rank == 0)
+      std::cout << std::endl << "Eikonal calculations for S waves... " << std::endl;
+    for(int shotNumber=0;shotNumber<(int)config->data.coordShots.size();shotNumber++) {
+      if(config->mpiConfig.rank == 0)
+        std::cout << "  Shot Number " << shotNumber+1 << " on " << config->data.coordShots.size() << std::endl;  
+      // Calculate the S waves travel times everywhere on the mesh (put them on tt3dS) for the shot number shotNumber :
+      eikonal3d(&tt3dS,&velModel,config,shotNumber,true);
+      for(int j=0;j<(int)config->data.coordStations.size();j++)
+        arrivalTimes.timesS.push_back(getTime(&tt3dS,config->data.coordStations[j],&velModel,shotNumber));
+        //arrivalTimes.timesS.push_back(getTime(&tt3dS,config->data.coordStations[j],&velModel,shotNumber)+0.01*shotNumber); // To create a synthetic case with false t0
+    }
+    delete velModel.velS;
+    if(config->mpiConfig.rank == 0)
+      write_two_columns_file(&arrivalTimes.timesP,&arrivalTimes.timesS, config->outputDir+"calculatedTimes."+config->code+".dat");
+  }
+  else {
+    if(config->mpiConfig.rank == 0)
+      write_one_column_file(&arrivalTimes.timesP, config->outputDir+"calculatedTimes."+config->code+".dat");
+  }
+  if(config->mpiConfig.rank == 0) {
+    std::cout << std::endl << "Done !" << std::endl;
+    std::cout << "The calculated arrival times for first guess profiles has been written in : "+config->outputDir+"calculatedTimes."+config->code+".dat";
+    std::cout << std::endl << std::endl;
+  }
 }
 
 void findOptimumGrid(double xmaxGrid, double ymaxGrid, double dxmin, double dymin, Configuration* config)
@@ -950,13 +1078,14 @@ void findOptimumGrid(double xmaxGrid, double ymaxGrid, double dxmin, double dymi
 // We just do that for P waves for now TODO : same for S waves as well
 {
   int wavelet = 0;
-  int noXptdtsd = 0,noYptdtsd = 0; // Number Of Points To Describe The Smallest Distances
+  //int noXptdtsd = 0,noYptdtsd = 0; // Number Of Points To Describe The Smallest Distances
   int nx = 0, ny = 0, nzFilt = 0;
   float dx = 0.0, dy = 0.0, dzFilt = 0.0;
   float dxRef = 0.0, dyRef = 0.0, dzRef = 0.0;
   int shotNumber=config->shotNumberRef;
   std::vector<double> zFilt, zFiltp;
-  std::vector<double> nxs,nys,nzs,dxs,dys,dzs,noXptdtsdRecord,noYptdtsdRecord,averageDiffs;
+  std::vector<double> nxs,nys,nzs,dxs,dys,dzs,averageDiffs,percentOk; //noXptdtsdRecord,noYptdtsdRecord
+  std::vector<int> oks;
    
   if(config->findOptimumGrid) {
     if(config->verbose1 && config->mpiConfig.rank == 0) {
@@ -970,12 +1099,20 @@ void findOptimumGrid(double xmaxGrid, double ymaxGrid, double dxmin, double dymi
     tab3d<double> refTt3dP(config->data.nz,config->nxref,config->nyref,-1.0); // Will contain the P waves arrival times. Initialize every cell at -1.0 
     VelocityModel refVelModel;    // Will contain the reference velocity model
     refVelModel.nx = config->nxref; refVelModel.ny = config->nyref; refVelModel.nz = config->data.nz;
-    dxRef = (xmaxGrid-config->data.xminGrid)/(config->nxref-1);
-    dyRef = (ymaxGrid-config->data.yminGrid)/(config->nyref-1);
+    dxRef = (xmaxGrid-config->data.xminGridGlob)/(config->nxref-1);
+    dyRef = (ymaxGrid-config->data.yminGridGlob)/(config->nyref-1);
     dzRef = config->data.dz;
     refVelModel.dx = dxRef; refVelModel.dy = dyRef; refVelModel.dz = dzRef;
-    refVelModel.xmin = config->data.xminGrid; refVelModel.ymin = config->data.yminGrid; refVelModel.zmin = config->data.zminGrid;
-    refVelModel.velP= new tab3d<double>(refVelModel.nz-1,refVelModel.nx-1,refVelModel.ny-1,-1.0); // Create a (nz-1,nx-1,ny-1) mesh and initialize every cell at -1 
+    calculateShiftForEachShot(&refVelModel,config);
+    isThisConfigOk(&refVelModel,config);
+    if ((! refVelModel.OK) && (config->mpiConfig.rank == 0)) {
+      std::cout << " Reference velocity model is not OK! Change NXREF, NYREF or COORD_TOL" << std::endl;
+      std::cout << " Try to choose nx ~ ny ~ nz... but this can be prohibitive if the first guess curve contains two many points!" << std::endl;
+      //  MPI_Finalize();                         // ...
+      //  exit(0);                                // ... and we terminate!
+    }
+    //refVelModel.xmin = config->data.xminGrid; refVelModel.ymin = config->data.yminGrid; refVelModel.zmin = config->data.zminGrid;
+    refVelModel.velP= new tab3d<double>(refVelModel.nz-1,refVelModel.nx-1,refVelModel.ny-1,-1.0); // Create a (nz-1,nx-1,ny-1) mesh and initialize every cell at -1
     meshing(&config->data.filtFirstGuessP[wavelet],&refVelModel,false); // Extend this profile on the whole mesh (it is the filteredFirstGuessP.XXX.dat)
     if(config->verbose1 && config->mpiConfig.rank == 0) {
       std::cout << "      Reference Eikonal computing for nx = config->nxref = " << config->nxref << " ny = config->nyref = " << config->nyref << " nz = ";
@@ -989,28 +1126,28 @@ void findOptimumGrid(double xmaxGrid, double ymaxGrid, double dxmin, double dymi
       std::cout << "      Done !" << std::endl << std::endl;
       std::cout << "    Now we will compare the times from this large run to iteratively decimated version of P wave velocity profile... " << std::endl << std::endl;
     }    
-    std::vector<int> noXptdtsdVec,noYptdtsdVec; // Number Of Points To Describe The Smallest Distances, vectors to store the values to test.
+    std::vector<int> nxVec,nyVec; // Nx,nyValues to test
     std::vector<int> nzFiltVec; // nz for filtered models
 
-    noXptdtsdVec=config->noXptdtsdVec; //.push_back(4);noXptdtsdVec.push_back(5);//noXptdtsdVec.push_back(4);noXptdtsdVec.push_back(5);
-    noYptdtsdVec=config->noYptdtsdVec; //.push_back(4);noYptdtsdVec.push_back(5);//noYptdtsdVec.push_back(4);noYptdtsdVec.push_back(5);
+    nxVec=config->nxVec; //.push_back(4);nxVec.push_back(5);//nxVec.push_back(4);nxVec.push_back(5);
+    nyVec=config->nyVec; //.push_back(4);nyVec.push_back(5);//nyVec.push_back(4);nyVec.push_back(5);
     nzFiltVec=config->nzFiltVec; //.push_back(100);nzFiltVec.push_back(150);//nzFiltVec.push_back(200);nzFiltVec.push_back(300);
     VelocityModel velModel;    // Will contain the velocity model
   
     for (int inzFilt=0;inzFilt<(int)nzFiltVec.size();inzFilt++) { 
-      for (int inoXptdtsd=0;inoXptdtsd<(int)noXptdtsdVec.size();inoXptdtsd++) {
-        for (int inoYptdtsd=0;inoYptdtsd<(int)noYptdtsdVec.size();inoYptdtsd++) {
+      for (int inx=0;inx<(int)nxVec.size();inx++) {
+        for (int iny=0;iny<(int)nyVec.size();iny++) {
           nzFilt = nzFiltVec[inzFilt];
-        //  noXptdtsd = noXptdtsdVec[inoXptdtsd];
-        //  noYptdtsd = noYptdtsdVec[inoYptdtsd];
+        //  noXptdtsd = nxVec[inx];
+        //  noYptdtsd = nyVec[iny];
         //  dx=dxmin/((float)noXptdtsd);
         //  dy=dymin/((float)noYptdtsd);
-        //  nx=ceil((xmaxGrid-config->data.xminGrid)/dx);
-        //  ny=ceil((ymaxGrid-config->data.yminGrid)/dy);
-          nx = noXptdtsdVec[inoXptdtsd]; // TODO rename noXptdtsdVec to nxVec ...
-          ny = noYptdtsdVec[inoXptdtsd]; // TODO rename noYptdtsdVec to nyVec ...
-          dx = (xmaxGrid-config->data.xminGrid)/((float)(nx-1));
-          dy = (ymaxGrid-config->data.yminGrid)/((float)(ny-1));
+        //  nx=ceil((xmaxGrid-config->data.xminGridGlob)/dx);
+        //  ny=ceil((ymaxGrid-config->data.yminGridGlob)/dy);
+          nx = nxVec[inx];
+          ny = nyVec[iny];
+          dx = (xmaxGrid-config->data.xminGridGlob)/((float)(nx-1));
+          dy = (ymaxGrid-config->data.yminGridGlob)/((float)(ny-1));
           dzFilt=config->data.dz*((double)config->data.nz-1)/((double)nzFilt-1.0);
           /*
           z[1]   -        zFilt[1]     -            ^
@@ -1036,11 +1173,11 @@ void findOptimumGrid(double xmaxGrid, double ymaxGrid, double dxmin, double dymi
           dxs.push_back(dx);
           dys.push_back(dy);
           dzs.push_back(dzFilt);
-          noXptdtsdRecord.push_back(noXptdtsd);
-          noYptdtsdRecord.push_back(noYptdtsd);
+          //noXptdtsdRecord.push_back(noXptdtsd);
+          //noYptdtsdRecord.push_back(noYptdtsd);
           if(config->verbose2 && config->mpiConfig.rank == 0) {
-            std::cout << "    Number Of x Points To Describe The Smallest Distances : " << noXptdtsd << std::endl; 
-            std::cout << "    Number Of y Points To Describe The Smallest Distances : " << noYptdtsd << std::endl;
+            //std::cout << "    Number Of x Points To Describe The Smallest Distances : " << noXptdtsd << std::endl; 
+            //std::cout << "    Number Of y Points To Describe The Smallest Distances : " << noYptdtsd << std::endl;
             std::cout << "    nx = " << nx << " ny = " << ny << " nzFilt = " << nzFilt;
             std::cout << "    dx = " << dx << " dy = " << dy << " dzFilt = " << dzFilt << std::endl;
             std::cout << "    (~"+formatBytes(sizeof(double)*nx*ny*nzFilt+sizeof(double)*(nx-1)*(ny-1)*(nzFilt-1))+" will be used... are you sure to have enough memory?)" << std::endl;
@@ -1052,7 +1189,12 @@ void findOptimumGrid(double xmaxGrid, double ymaxGrid, double dxmin, double dymi
             zFiltp.push_back(zFilt[i-1]+(zFilt[i]-zFilt[i-1])/2.0);
           velModel.nx = nx; velModel.ny = ny; velModel.nz = nzFilt;
           velModel.dx = dx; velModel.dy = dy; velModel.dz = dzFilt;
-          velModel.xmin = config->data.xminGrid; velModel.ymin = config->data.yminGrid; velModel.zmin = config->data.zminGrid;
+          velModel.xmin.clear(); velModel.ymin.clear(); velModel.zmin.clear();
+          calculateShiftForEachShot(&velModel,config);
+          isThisConfigOk(&velModel,config);
+          oks.push_back(velModel.OK);
+          percentOk.push_back(velModel.percentOk);
+          //velModel.xmin = config->data.xminGrid; velModel.ymin = config->data.yminGrid; velModel.zmin = config->data.zminGrid;
           std::vector<double> velP1D = downSampleProfile(config->data.filtFirstGuessP[wavelet],config->data.zp,zFiltp);
           // velP1D Contains the down sampled velocity model !! warning velP will not give the velocity at zFilt but between the points. It will have a size nzFilt-1
           velModel.velP= new tab3d<double>(velModel.nz-1,velModel.nx-1,velModel.ny-1,-1.0); // Create a (nz-1,nx-1,ny-1) mesh and initialize every cell at -1 
@@ -1069,48 +1211,91 @@ void findOptimumGrid(double xmaxGrid, double ymaxGrid, double dxmin, double dymi
           delete velModel.velP;
           double averageDiff = 0;
           for (int k=0; k<(int)config->data.coordStations.size();k++) {
-           // std::cout << "  tt3dP[" << k << "] : "  << getTime(&tt3dP,config->data.coordStations[k],&velModel);
-           // std::cout << "  refTt3dP[ " << k << "] : " << getTime(&refTt3dP,config->data.coordStations[k],&refVelModel);
-           // std::cout << "  diff : " << fabs(getTime(&tt3dP,config->data.coordStations[k],&velModel) -getTime(&refTt3dP,config->data.coordStations[k],&refVelModel)) << std::endl;
-            averageDiff += fabs(getTime(&tt3dP,config->data.coordStations[k],&velModel) -getTime(&refTt3dP,config->data.coordStations[k],&refVelModel));
+           // std::cout << "  tt3dP[" << k << "] : "  << getTime(&tt3dP,config->data.coordStations[k],&velModel,shotNumber);
+           // std::cout << "  refTt3dP[ " << k << "] : " << getTime(&refTt3dP,config->data.coordStations[k],&refVelModel,shotNumber);
+           // std::cout << "  diff : " << fabs(getTime(&tt3dP,config->data.coordStations[k],&velModel,shotNumber) -getTime(&refTt3dP,config->data.coordStations[k],&refVelModel,shotNumber)) << std::endl;
+            averageDiff += fabs(getTime(&tt3dP,config->data.coordStations[k],&velModel,shotNumber) -getTime(&refTt3dP,config->data.coordStations[k],&refVelModel,shotNumber));
           }
           averageDiff /= (double)config->data.coordStations.size();
           averageDiffs.push_back(averageDiff);
           if(config->verbose2 && config->mpiConfig.rank == 0)
-            std::cout << "    Average differences in seconds at the receivers between big run and that run for shot number "<< shotNumber << " : "  << averageDiff << std::endl << std::endl;
+            std::cout << "    Average differences in seconds at the receivers between big run and that run for shot number "<< shotNumber << " : "  << averageDiff << "  --> OK? " << velModel.OK << std::endl << std::endl;
         }
       }
     }
-    int min_index = std::min_element(averageDiffs.begin(), averageDiffs.end()) - averageDiffs.begin(); // This gives the index of the minimum average value
-    if(config->verbose1 && config->mpiConfig.rank == 0) {
-      std::cout << "    The best grid configuration among those tested ("<< (int)averageDiffs.size() << " tested) seems to be :" << std::endl;
-      std::cout << "      Number Of x Points To Describe The Smallest Distances : " << noXptdtsdRecord[min_index] << std::endl; 
-      std::cout << "      Number Of y Points To Describe The Smallest Distances : " << noYptdtsdRecord[min_index] << std::endl;
-      std::cout << "      nx = " << nxs[min_index] << " ny = " << nys[min_index] << " nzFilt = " << nzs[min_index] << std::endl;
-      std::cout << "      dx = " << dxs[min_index] << " dy = " << dys[min_index] << " dzFilt = " << dzs[min_index] << std::endl;
-      std::cout << "      -> Average differences at the receivers between big run and that run for shot number "<< shotNumber << " : "  << averageDiffs[min_index] << std::endl << std::endl;
-      std::cout << "    We keep this grid configuration !" << std::endl;
-      std::cout << "Done!" << std::endl << std::endl;
+    
+    std::vector<double> nxsOK,nysOK,nzsOK,dxsOK,dysOK,dzsOK,averageDiffsOK;
+    for (int k=0; k<(int)oks.size();k++) {
+      if (oks[k] == 1) {
+        nxsOK.push_back(nxs[k]);
+        nysOK.push_back(nys[k]);
+        nzsOK.push_back(nzs[k]);
+        dxsOK.push_back(dxs[k]);
+        dysOK.push_back(dys[k]);
+        dzsOK.push_back(dzs[k]);
+        averageDiffsOK.push_back(averageDiffs[k]);
+      }
     }
-    config->data.nzFilt=nzs[min_index];
-    config->data.nx=nxs[min_index];
-    config->data.ny=nys[min_index];
-    config->data.dzFilt=dzs[min_index];
-    config->data.dx=dxs[min_index];
-    config->data.dy=dys[min_index];
+    
+    if ((int)nxsOK.size() > 0) { // At least one of the configurations tested is ok
+      int min_index = std::min_element(averageDiffsOK.begin(), averageDiffsOK.end()) - averageDiffsOK.begin(); // This gives the index of the minimum average value
+      if(config->verbose1 && config->mpiConfig.rank == 0) {
+        std::cout << "    The best grid configuration among those tested which are ok ("<< (int)averageDiffsOK.size() << " OK tested) seems to be :" << std::endl;
+        std::cout << "      nx = " << nxsOK[min_index] << " ny = " << nysOK[min_index] << " nzFilt = " << nzsOK[min_index] << std::endl;
+        std::cout << "      dx = " << dxsOK[min_index] << " dy = " << dysOK[min_index] << " dzFilt = " << dzsOK[min_index] << std::endl;
+        std::cout << "      -> Average differences at the receivers between big run and that run for shot number "<< shotNumber << " : "  << averageDiffsOK[min_index] << std::endl << std::endl;
+        std::cout << "    We keep this grid configuration !" << std::endl;
+        std::cout << std::endl;
+        std::cout << "    The other acceptable configuration are:" << std::endl;
+        for (int k=0; k<(int)nxsOK.size();k++) {
+          std::cout << "      nx = " << nxsOK[k] << " ny = " << nysOK[k] << " nzFilt = " << nzsOK[k] << std::endl;
+          std::cout << "      dx = " << dxsOK[k] << " dy = " << dysOK[k] << " dzFilt = " << dzsOK[k] << std::endl;
+          std::cout << "      Average Diff : " << averageDiffsOK[k] << std::endl;
+          std::cout << std::endl;
+        }
+        std::cout << "Done!" << std::endl << std::endl;
+      }
+      config->data.nzFilt=nzs[min_index];
+      config->data.nx=nxs[min_index];
+      config->data.ny=nys[min_index];
+      config->data.dzFilt=dzs[min_index];
+      config->data.dx=dxs[min_index];
+      config->data.dy=dys[min_index];
+    }
+    else {
+      int min_index = std::min_element(averageDiffs.begin(), averageDiffs.end()) - averageDiffs.begin(); // This gives the index of the minimum average value
+      int max_percent_index = std::max_element(percentOk.begin(), percentOk.end()) - percentOk.begin(); // This gives the index of the maximum percentOK
+      if(config->verbose1 && config->mpiConfig.rank == 0) {
+        std::cout << "    None configuration is OK!!" << std::endl;
+        std::cout << "    The best grid configuration among those tested ("<< (int)averageDiffs.size() << " tested) seems to be :" << std::endl;
+        std::cout << "      nx = " << nxs[max_percent_index] << " ny = " << nys[max_percent_index] << " nzFilt = " << nzs[max_percent_index] << std::endl;
+        std::cout << "      dx = " << dxs[max_percent_index] << " dy = " << dys[max_percent_index] << " dzFilt = " << dzs[max_percent_index] << std::endl;
+//        std::cout << "      nx = " << nxs[min_index] << " ny = " << nys[min_index] << " nzFilt = " << nzs[min_index] << std::endl;
+//        std::cout << "      dx = " << dxs[min_index] << " dy = " << dys[min_index] << " dzFilt = " << dzs[min_index] << std::endl;
+        std::cout << "      -> Average differences at the receivers between big run and that run for shot number "<< shotNumber << " : "  << averageDiffs[max_percent_index] << std::endl << std::endl;
+        std::cout << "    We keep this grid configuration !" << std::endl;
+        std::cout << "Done!" << std::endl << std::endl;
+      }
+      config->data.nzFilt=nzs[max_percent_index];
+      config->data.nx=nxs[max_percent_index];
+      config->data.ny=nys[max_percent_index];
+      config->data.dzFilt=dzs[max_percent_index];
+      config->data.dx=dxs[max_percent_index];
+      config->data.dy=dys[max_percent_index];    
+    }
   } // If config->findOptimumGrid == 0, we use values given in the configuration file :
   else {
     config->data.nzFilt=config->nzfiltDefault;
-    config->data.dx=dxmin/((float)config->numberOfXpointsToDescribeTheSmallestDistanceDefault);
-    config->data.dy=dymin/((float)config->numberOfYpointsToDescribeTheSmallestDistanceDefault);
-    config->data.nx=ceil((xmaxGrid-config->data.xminGrid)/config->data.dx);
-    config->data.ny=ceil((ymaxGrid-config->data.yminGrid)/config->data.dy);
+    config->data.dx=dxmin/((float)config->nxDefault);
+    config->data.dy=dymin/((float)config->nyDefault);
+    config->data.nx=ceil((xmaxGrid-config->data.xminGridGlob)/config->data.dx);
+    config->data.ny=ceil((ymaxGrid-config->data.yminGridGlob)/config->data.dy);
     config->data.dzFilt=config->data.dz*((double)config->data.nz-1)/((double)config->data.nzFilt-1.0);
     if(config->verbose1 && config->mpiConfig.rank == 0) {
       std::cout << "  -> We use the grid configuration given :" << std::endl;
-      std::cout << "    Number Of x Points To Describe The Smallest Distances : " << config->numberOfXpointsToDescribeTheSmallestDistanceDefault << std::endl; 
-      std::cout << "    Number Of y Points To Describe The Smallest Distances : " << config->numberOfYpointsToDescribeTheSmallestDistanceDefault << std::endl;
-      std::cout << "    nx = " << config->data.nx << " ny = " << config->data.ny << " nzFilt = " << config->data.nzFilt << std::endl;
+      //std::cout << "    Number Of x Points To Describe The Smallest Distances : " << config->nxDefault << std::endl; 
+      //std::cout << "    Number Of y Points To Describe The Smallest Distances : " << config->nyDefault << std::endl;
+      std::cout << "    nx = " << config->data.nx << " (= " << config->nxDefault << " ??)  ny = " << config->data.ny << " (= " << config->nyDefault << "??)  nzFilt = " << config->data.nzFilt << std::endl;
       std::cout << "    dx = " << config->data.dx<< " dy = " << config->data.dy << " dzFilt = " << config->data.dzFilt << std::endl;
     }
   }
@@ -1150,7 +1335,8 @@ void createDataset(Configuration* config)
   config->data.nz = config->data.realP.size()+1; // We add one because there is on border point more than intervals (see README)
   velModel.nx = config->data.nx; velModel.ny = config->data.ny; velModel.nz = config->data.nz;  
   velModel.dx = config->data.dx; velModel.dy = config->data.dy; velModel.dz = config->data.dz;//fabs(config->data.z[1]-config->data.z[0]);
-  velModel.xmin = config->data.xminGrid; velModel.ymin = config->data.yminGrid; velModel.zmin = config->data.zminGrid;
+  calculateShiftForEachShot(&velModel,config);
+  //velModel.xmin = config->data.xminGrid; velModel.ymin = config->data.yminGrid; velModel.zmin = config->data.zminGrid;
   velModel.velP= new tab3d<double>(velModel.nz-1,velModel.nx-1,velModel.ny-1,-1.0); // Create a (nz-1,nx-1,ny-1) mesh and initialize every cell at -1 
   // Copy the file content into the velocity model (extend the 1D profile to obtain a 3D profile).
   meshing(&config->data.realP,&velModel,false); // Extend this profile on the whole mesh
@@ -1164,7 +1350,8 @@ void createDataset(Configuration* config)
     // Calculate the P waves travel times everywhere on the mesh (put them on tt3dP) for the shot number shotNumber :
     eikonal3d(&tt3dP,&velModel,config,shotNumber,false); 
     for(int j=0;j<(int)config->data.coordStations.size();j++)
-      arrivalTimes.timesP.push_back(getTime(&tt3dP,config->data.coordStations[j],&velModel));
+      arrivalTimes.timesP.push_back(getTime(&tt3dP,config->data.coordStations[j],&velModel,shotNumber));
+      // arrivalTimes.timesP.push_back(getTime(&tt3dP,config->data.coordStations[j],&velModel,shotNumber)+0.01*shotNumber); // To create a synthetic case with false t0
   }
   delete velModel.velP;
   config->data.times.timesP = arrivalTimes.timesP;
@@ -1182,14 +1369,15 @@ void createDataset(Configuration* config)
        // Calculate the S waves travel times everywhere on the mesh (put them on tt3dS) for the shot number shotNumber :
       eikonal3d(&tt3dS,&velModel,config,shotNumber,true);
       for(int j=0;j<(int)config->data.coordStations.size();j++)
-        arrivalTimes.timesS.push_back(getTime(&tt3dS,config->data.coordStations[j],&velModel));
+        arrivalTimes.timesS.push_back(getTime(&tt3dS,config->data.coordStations[j],&velModel,shotNumber));
+        //arrivalTimes.timesS.push_back(getTime(&tt3dS,config->data.coordStations[j],&velModel,shotNumber)+0.01*shotNumber); // To create a synthetic case with false t0
     }
     delete velModel.velS;
     config->data.times.timesS = arrivalTimes.timesS;
     if(config->mpiConfig.rank == 0)
       write_two_columns_file(&config->data.times.timesP,&config->data.times.timesS, config->outputDir+"calculatedTimes."+config->code+".dat");
   }
-  else
+  else {
     if(config->mpiConfig.rank == 0)
       write_one_column_file(&config->data.times.timesP, config->outputDir+"calculatedTimes."+config->code+".dat");
     if(config->verbose1 && config->mpiConfig.rank == 0) {
@@ -1197,6 +1385,7 @@ void createDataset(Configuration* config)
       std::cout << "The calculated arrival times has been written in : "+config->outputDir+"calculatedTimes."+config->code+".dat";
       std::cout << std::endl << std::endl;
     }
+  }
 }
 
 State init_state(Configuration* config)
@@ -1235,6 +1424,7 @@ Run init_run(Configuration* config)
     if (config->swaves) {
       run.averageS.push_back(0.0);
       run.varS.push_back(0.0);
+      run.varVpVs.push_back(0.0);
     }
   }
   for(int i=0;i<config->nbt;i++) {              // Loop on the temperatures : i.e the number of chains
@@ -1272,11 +1462,11 @@ Run init_run(Configuration* config)
         chain->deltaParameters[wavelet].push_back(a*chain->T+b); // The variation range of the parameters varies with the temperature
       }
     }
-
     chain->dotProductP = new mpfr_t[config->data.nzFilt-1];
     chain->dotProductVarP = new mpfr_t[config->data.nzFilt-1];
     chain->dotProductS = new mpfr_t[config->data.nzFilt-1];
     chain->dotProductVarS = new mpfr_t[config->data.nzFilt-1];
+    chain->dotProductVarVpVs = new mpfr_t[config->data.nzFilt-1];
 
     run.chains.push_back(chain); // Add this chain to the run
     // We will keep all the profiles generated by the chains to calculate the quantiles :
@@ -1286,11 +1476,9 @@ Run init_run(Configuration* config)
       if (config->swaves)
         run.chains[i]->profilesS.push_back(values);
     }
-    
     run.chains[i]->states[0].E=energy(&initialState,chain,config); // Compute the energy of the first state of the chain
-    mpfr_set_default_prec(PREC); // Set default precision to 256
-    mpfr_init_set_d(run.chains[i]->sumOfweights,0.0,MPFR_RNDN); // Set that also to 0;
-    
+    mpfr_set_default_prec(PREC); // Set default precision to PREC
+    mpfr_init_set_d(run.chains[i]->sumOfweights,0.0,RND); // Set that also to 0;
     for(int iz=0;iz<config->data.nzFilt-1;iz++) {
       run.chains[i]->minP.push_back(run.chains[i]->profilesP[iz].back()); // When there is just one profile it is the minimum and the maximum :
       run.chains[i]->maxP.push_back(run.chains[i]->profilesP[iz].back());
@@ -1302,8 +1490,8 @@ Run init_run(Configuration* config)
       run.chains[i]->varP.push_back(0.);
       run.chains[i]->qInfP.push_back(0.);
       run.chains[i]->qSupP.push_back(0.);
-      mpfr_init_set_d(run.chains[i]->dotProductP[iz],0.0,MPFR_RNDN); // Set that also to 0;
-      mpfr_init_set_d(run.chains[i]->dotProductVarP[iz],0.0,MPFR_RNDN); // Set that also to 0;
+      mpfr_init_set_d(run.chains[i]->dotProductP[iz],0.0,RND); // Set that also to 0;
+      mpfr_init_set_d(run.chains[i]->dotProductVarP[iz],0.0,RND); // Set that also to 0;
       run.chains[i]->weightedAverageP.push_back(0.);
       run.chains[i]->weightedVarP.push_back(0.);
       if (config->swaves) {
@@ -1311,10 +1499,12 @@ Run init_run(Configuration* config)
         run.chains[i]->varS.push_back(0.);
         run.chains[i]->qInfS.push_back(0.);
         run.chains[i]->qSupS.push_back(0.);
-        mpfr_init_set_d(run.chains[i]->dotProductS[iz],0.0,MPFR_RNDN); // Set that also to 0;
-        mpfr_init_set_d(run.chains[i]->dotProductVarS[iz],0.0,MPFR_RNDN); // Set that also to 0;
+        mpfr_init_set_d(run.chains[i]->dotProductS[iz],0.0,RND); // Set that also to 0;
+        mpfr_init_set_d(run.chains[i]->dotProductVarS[iz],0.0,RND); // Set that also to 0;
+        mpfr_init_set_d(run.chains[i]->dotProductVarVpVs[iz],0.0,RND); // Set that also to 0;
         run.chains[i]->weightedAverageS.push_back(0.);
         run.chains[i]->weightedVarS.push_back(0.);
+        run.chains[i]->weightedVarVpVs.push_back(0.);
       }
     }
 
@@ -1329,7 +1519,6 @@ Run init_run(Configuration* config)
     // SCI[0][l]=exp(Ep*T[i]*(1/T[i+1]-1/T[i]));
     // delete(chain);
   }
-
   run.minP=run.chains[0]->minP; // First we store the profile for chain 0 (we will compare it with the others)
   run.maxP=run.chains[0]->maxP;
   if (config->swaves) {

@@ -212,6 +212,8 @@ _qSupPI.XXX.dat : superior value of the quantile calculated for P wave velocitie
 
 _qSupSI.XXX.dat : superior value of the quantile calculated for S wave velocities and chain I
 
+_bestModelTimes.XXX.dat : times corresponding to the best model (the origin time of the shots are not taken into account)
+
 TODO finish that
 
 TIPS
@@ -267,5 +269,7 @@ How to make this code better : _Improve this README file
                                _In build prior calculate Tmax (add an option: automaticaly calculate Tmax)
                                _Script redoThatRun.sh XXX -> copy files, par_file, seed...
                                _Write all files with c++ fashion (filesAndControl.cpp)
-                               _Record min and max velocity values after a given iteration (not from the beginning)
+                               _Record min and max velocity values after a given iteration (not only from the beginning)
+                               _Add a burn-in
+                               _Implement the small algo of Thomas to avoid the out-of-domain, see utils (we simulate in a tore)
 

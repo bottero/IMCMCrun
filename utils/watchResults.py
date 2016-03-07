@@ -86,6 +86,8 @@ parser.add_argument("-s","--swaps", help="Plot the swaps",
                     action="store_true")
 parser.add_argument("--vpvs", help="Plot mean Vp/Vs ratio plus uncertainties",
                     action="store_true")
+parser.add_argument("--filtering", help="Show optimum filtering",
+                    action="store_true")
 parser.add_argument("--paper", help="Plot the figures for the paper",
                     action="store_true")
 args = parser.parse_args()
@@ -105,7 +107,7 @@ if not representsInt(code):
 directory... (no stats0 found)"
     sys.exit(0)
 
-if not (args.all or args.data or args.geometry or args.energies or args.results or args.best or (args.resultsChain != -1) or args.swaps or args.vpvs or args.paper):
+if not (args.all or args.data or args.geometry or args.energies or args.results or args.best or (args.resultsChain != -1) or args.filtering or args.swaps or args.vpvs or args.paper):
     print "Nothing has to be done!"
     sys.exit(0)
 
@@ -117,49 +119,54 @@ if not (args.all or args.data or args.geometry or args.energies or args.results 
 T = np.zeros(0)
 with open(args.pathToDir+'config.cfg') as configFile:
     for line in configFile:
-        if 'SWAVES' in line:
-            if line.split(" = ")[1].split("#")[0].strip() == "1":
-                swaves=True
-            else:
-                swaves=False
-        if 'ANALYTICAL_RUN' in line:
-            if line.split(" = ")[1].split("#")[0].strip() == "1":
-                analytical=True
-            else:
-                analytical=False
-        if 'RECALCULATE_T0' in line:
-            if line.split(" = ")[1].split("#")[0].strip() == "1":
-                recalculate_t0=True
-            else:
-                recalculate_t0=False
-        if 'QP =' in line:
-            qp = line.split(" = ")[1].split("#")[0].strip()
-        if 'NAME_OF_FIRST_GUESS_P_FILE' in line:
-            nameOfFirstGuessP = line.split(" = ")[1].split("#")[0].strip()
-        if 'NAME_OF_FIRST_GUESS_S_FILE' in line:
-            nameOfFirstGuessS = line.split(" = ")[1].split("#")[0].strip()
-        if 'NAME_OF_REAL_PROFILE_FILE_P' in line:
-            nameOfrealP = line.split(" = ")[1].split("#")[0].strip()
-        if 'NAME_OF_REAL_PROFILE_FILE_S' in line:
-            nameOfrealS = line.split(" = ")[1].split("#")[0].strip()
-        if 'N_PRIOR_PROFILES' in line:
-            nPriorProfiles = line.split(" = ")[1].split("#")[0].strip()
-            if representsInt(nPriorProfiles): # Verify that the string extracted is a int
-                nPriorProfiles = int(nPriorProfiles)
-        if 'NAME_OF_STATIONS_FILE' in line:
-            nameOfStationsFile = line.split(" = ")[1].split("#")[0].strip()
-        if 'NAME_OF_SHOTS_FILE' in line:
-            nameOfShotsFile = line.split(" = ")[1].split("#")[0].strip()
-        if 'NAME_OF_TIMES_FILE =' in line:
-            nameOfTimesFile = line.split(" = ")[1].split("#")[0].strip()
-        if 'SIGMAP =' in line:
-            sigmaP = line.split(" = ")[1].split("#")[0].strip()
-            if representsFloat(sigmaP): # Verify that the string extracted is a int
-                sigmaP = float(sigmaP)
-        if 'SIGMAS =' in line:
-            sigmaS = line.split(" = ")[1].split("#")[0].strip()
-            if representsFloat(sigmaS): # Verify that the string extracted is a int
-                sigmaS = float(sigmaS)
+        if line.split('#')[0].strip(): # If the line is not a comment
+            if 'SWAVES' in line:
+                if line.split(" = ")[1].split("#")[0].strip() == "1":
+                    swaves=True
+                else:
+                    swaves=False
+            if 'ANALYTICAL_RUN' in line:
+                if line.split(" = ")[1].split("#")[0].strip() == "1":
+                    analytical=True
+                else:
+                    analytical=False
+            if 'RECALCULATE_T0' in line:
+                if line.split(" = ")[1].split("#")[0].strip() == "1":
+                    recalculate_t0=True
+                else:
+                    recalculate_t0=False
+            if 'QP =' in line:
+                qp = line.split(" = ")[1].split("#")[0].strip()
+            if 'NAME_OF_FIRST_GUESS_P_FILE' in line:
+                nameOfFirstGuessP = line.split(" = ")[1].split("#")[0].strip()
+            if 'NAME_OF_FIRST_GUESS_S_FILE' in line:
+                nameOfFirstGuessS = line.split(" = ")[1].split("#")[0].strip()
+            if 'NAME_OF_REAL_PROFILE_FILE_P' in line:
+                nameOfrealP = line.split(" = ")[1].split("#")[0].strip()
+            if 'NAME_OF_REAL_PROFILE_FILE_S' in line:
+                nameOfrealS = line.split(" = ")[1].split("#")[0].strip()
+            if 'N_PRIOR_PROFILES' in line:
+                nPriorProfiles = line.split(" = ")[1].split("#")[0].strip()
+                if representsInt(nPriorProfiles): # Verify that the string extracted is a int
+                    nPriorProfiles = int(nPriorProfiles)
+            if 'NAME_OF_STATIONS_FILE' in line:
+                nameOfStationsFile = line.split(" = ")[1].split("#")[0].strip()
+            if 'NAME_OF_SHOTS_FILE' in line:
+                nameOfShotsFile = line.split(" = ")[1].split("#")[0].strip()
+            if 'NAME_OF_TIMES_FILE =' in line:
+                nameOfTimesFile = line.split(" = ")[1].split("#")[0].strip()
+            if 'SIGMAP =' in line:
+                sigmaP = line.split(" = ")[1].split("#")[0].strip()
+                if representsFloat(sigmaP): # Verify that the string extracted is a int
+                    sigmaP = float(sigmaP)
+            if 'SIGMAS =' in line:
+                sigmaS = line.split(" = ")[1].split("#")[0].strip()
+                if representsFloat(sigmaS): # Verify that the string extracted is a int
+                    sigmaS = float(sigmaS)
+            if 'COORD_TOL =' in line:
+                coord_tol = line.split(" = ")[1].split("#")[0].strip()
+                if representsFloat(coord_tol): # Verify that the string extracted is a int
+                    coord_tol = float(coord_tol)
 
 with open(args.pathToDir+'config.'+code+'.dat') as outConfigFile:
     for line in outConfigFile:
@@ -178,27 +185,6 @@ with open(args.pathToDir+'config.'+code+'.dat') as outConfigFile:
             tmax=(line.split(":")[-1]).split("\n")[0].strip()
             if representsInt(tmax): # Verify that the string extracted is a int
                 tmax = int(tmax)
-        if 'xmin:' in line:
-            xmin=line.split(":")[1].strip().split()[0]
-            if representsFloat(xmin): # Verify that the string extracted is a int
-                xmin = float(xmin)
-            xmax=line.split(":")[2].strip().split()[0]
-            if representsFloat(xmax): # Verify that the string extracted is a int
-                xmax = float(xmax)
-        if 'ymin:' in line:
-            ymin=line.split(":")[1].strip().split()[0]
-            if representsFloat(ymin): # Verify that the string extracted is a int
-                ymin = float(ymin)
-            ymax=line.split(":")[2].strip().split()[0]
-            if representsFloat(ymax): # Verify that the string extracted is a int
-                ymax = float(ymax)
-        if 'zmin:' in line:
-            zmin=line.split(":")[1].strip().split()[0]
-            if representsFloat(zmin): # Verify that the string extracted is a int
-                zmin = float(zmin)
-            zmax=line.split(":")[2].strip().split()[0]
-            if representsFloat(zmax): # Verify that the string extracted is a int
-                zmax = float(zmax)
         if 'Temperature ladder : ' in line: # Extract temperature ladder from line
             T[nbt-1]=line.split("T["+str(nbt-1)+"] = ")[1].strip("\n").strip()
             for i in np.arange(nbt-1):
@@ -235,6 +221,10 @@ maxS=[0]*nbt
 priorP=[0]*nPriorProfiles
 priorS=[0]*nPriorProfiles
 timesData=[0]
+nFiltered=len(glob.glob1(args.pathToDir,"filteredFirstGuessP.*"))
+filteredPcurve=[0]*nFiltered
+waveletFiltered=[""]*nFiltered
+filteredScurve=[0]*nFiltered
 
 # Loop on temperature chains
 for i in np.arange(nbt):
@@ -252,6 +242,11 @@ for i in np.arange(nbt):
         qInfSs[i]=np.loadtxt(args.pathToDir+"qInfS"+str(i)+"."+code+".dat")
         minS[i]=np.loadtxt(args.pathToDir+"minS."+str(i)+"."+code+".dat")
         maxS[i]=np.loadtxt(args.pathToDir+"maxS."+str(i)+"."+code+".dat")
+for i,filteredGuessPCurve in enumerate(glob.glob1(args.pathToDir,"filteredFirstGuessP.*")):
+  waveletFiltered[i]=filteredGuessPCurve.split('.')[1]
+  filteredPcurve[i] = np.loadtxt(args.pathToDir+filteredGuessPCurve)
+for i,filteredGuessSCurve in enumerate(glob.glob1(args.pathToDir,"filteredFirstGuessS.*")):
+  filteredScurve[i] = np.loadtxt(args.pathToDir+filteredGuessSCurve)
 globalAverageP=np.loadtxt(args.pathToDir+"globalAverageP."+code+".dat")
 globalVarP=np.loadtxt(args.pathToDir+"globalVarP."+code+".dat")
 globalMaxP=np.loadtxt(args.pathToDir+"maxP."+code+".dat") #TODO don't forget them
@@ -261,6 +256,7 @@ if swaves:
     globalMinS=np.loadtxt(args.pathToDir+"minS."+code+".dat")
     globalAverageS=np.loadtxt(args.pathToDir+"globalAverageS."+code+".dat")
     globalVarS=np.loadtxt(args.pathToDir+"globalVarS."+code+".dat")
+    globalVarVpVs=np.loadtxt(args.pathToDir+"globalVarVpVs."+code+".dat")
 coordShots=np.loadtxt(args.pathToDir+nameOfShotsFile)
 coordStats=np.loadtxt(args.pathToDir+nameOfStationsFile)
 firstGuessP=np.loadtxt(args.pathToDir+nameOfFirstGuessP)
@@ -276,7 +272,7 @@ if os.path.isfile(args.pathToDir+"bestModelTimes."+code+".dat"):
     bestModelTimes=np.loadtxt(args.pathToDir+"bestModelTimes."+code+".dat")
 else:
     bestModelCalculated=False
-#ll=np.loadtxt(args.pathToDir+"ll."+code+".dat")
+ll=np.loadtxt(args.pathToDir+"ll."+code+".dat")
 
 if nPriorProfiles > 0:
     for i in np.arange(nPriorProfiles):
@@ -295,6 +291,52 @@ if nit < 50:
 
 
 ### --- Analyses --- ###
+
+xmin=-1e99
+ymin=-1e99
+zmin=-1e99
+xmax=1e99
+ymax=1e99
+zmax=1e99
+### --- Analyses --- ###
+if np.size(coordShots) > 3:
+    xmin = coordShots[:,0].min()
+    ymin = coordShots[:,1].min()
+    zmin = coordShots[:,2].min()
+    xmax = coordShots[:,0].max()
+    ymax = coordShots[:,1].max()
+    zmax = coordShots[:,2].max()
+else:
+    xmin = coordShots[0]
+    ymin = coordShots[1]
+    zmin = coordShots[2]
+    xmax = coordShots[0]
+    ymax = coordShots[1]
+    zmax = coordShots[2]
+
+if np.size(coordStats) > 3:
+    xmin = min(xmin,coordStats[:,0].min())
+    ymin = min(ymin,coordStats[:,1].min())
+    zmin = min(zmin,coordStats[:,2].min())
+    xmax = max(xmax,coordStats[:,0].max())
+    ymax = max(ymax,coordStats[:,1].max())
+    zmax = max(zmax,coordStats[:,2].max())
+else:
+    xmin = min(xmin,coordStats[0])
+    ymin = min(ymin,coordStats[1])
+    zmin = min(zmin,coordStats[2])
+    xmax = max(xmax,coordStats[0])
+    ymax = max(ymax,coordStats[1])
+    zmax = max(zmax,coordStats[2])
+
+xmin2 = xmin - (xmax-xmin)*coord_tol;
+ymin2 = ymin - (ymax-ymin)*coord_tol;
+xmax2 = xmax + (xmax-xmin)*coord_tol;
+ymax2 = ymax + (ymax-ymin)*coord_tol;
+xmin = xmin2
+ymin = ymin2
+xmax = xmax2
+ymax = ymax2
 
 z=firstGuessP[:,0]
 zFilt=varPs[0][:,0]
@@ -327,9 +369,13 @@ if args.energies:
     if args.verbose:
         print "Models kept after iteration : "+str(args.treshold)+" will be shown"
     from operator import itemgetter
-    idxBest=min(enumerate(E), key=itemgetter(1))[0] # index of best model
-    itBestE=iterationBest[idxBest]
-    chainBest=chain[idxBest]
+    idxBest=0
+    itBestE=0
+    chainBest=0
+    if E:
+        idxBest=min(enumerate(E), key=itemgetter(1))[0] # index of best model
+        itBestE=iterationBest[idxBest]
+        chainBest=chain[idxBest]
     chain=[chain[i] for i in np.arange(nBest) if iterationBest[i] > args.treshold]
     iterationBest=[i for i in iterationBest if i>args.treshold]
     iteration=np.arange(nit)
@@ -528,9 +574,9 @@ if args.results:
     plt.hold(True)
     if not args.dont_show_guess:
         plt.plot(firstGuessP[:,1],z,color=(0.5,0.5,0.95),linewidth=4,label="First guess velocity profile")
+        plt.plot(globalAverageP[:,1],zFilt,color=(0.5,0.5,0),linewidth=4,label="Global average")
     if analytical:
         plt.plot(realP[:,1],z,color=(0,0,0.5),linewidth=4,label="Real velocity profile")
-    plt.plot(globalAverageP[:,1],zFilt,color=(0.5,0.5,0),linewidth=4,label="Global average")
     if not args.no_density_plots:
         pdense(zFilt,globalAverageP[:,1],np.sqrt(globalVarP[:,1]),M)
     else:
@@ -552,9 +598,9 @@ if args.results:
         plt.figure()
         if not args.dont_show_guess:
             plt.plot(firstGuessS[:,1],z,color=(0.5,0.95,0.5),linewidth=4,label="First guess velocity profile")
+            plt.plot(globalAverageS[:,1],zFilt,color=(0.5,0.5,0),linewidth=4,label="Global average")
         if analytical:
             plt.plot(realS[:,1],z,color=(0,0.5,0),linewidth=4,label="Real velocity profile")
-        plt.plot(globalAverageS[:,1],zFilt,color=(0.5,0.5,0),linewidth=4,label="Global average")
         if not args.no_density_plots:
             pdense(zFilt,globalAverageS[:,1],np.sqrt(globalVarS[:,1]),M)
         else:
@@ -580,16 +626,19 @@ if args.best:
             for i in np.arange(nShots):
                 diffPshoti=diffDataBestModel[i*nStats:(i+1)*nStats,0][timesData[i*nStats:(i+1)*nStats,0]>0]
                 t0ShotsPi=diffPshoti.mean()
+                if args.verbose:
+                    print "t0P[",i,"] = ",t0ShotsPi
                 diffDataBestModel[i*nStats:(i+1)*nStats,0]=diffDataBestModel[i*nStats:(i+1)*nStats,0]-t0ShotsPi
                 if swaves:
                     diffSshoti=diffDataBestModel[i*nStats:(i+1)*nStats,1][timesData[i*nStats:(i+1)*nStats,1]>0]
                     t0ShotsSi=diffSshoti.mean()
+                    if args.verbose:
+                        print "t0S[",i,"] = ",t0ShotsSi
                     diffDataBestModel[i*nStats:(i+1)*nStats,1]=diffDataBestModel[i*nStats:(i+1)*nStats,1]-t0ShotsSi
         diffP=diffDataBestModel[:,0][timesData[:,0]>0]
         diffS=diffDataBestModel[:,1][timesData[:,1]>0]
         fig = plt.figure()
         plt.hold(True)
-        plt.grid(True)
         plt.plot(np.arange(len(diffP)),np.zeros(len(diffP))+sigmaP,'b--',linewidth=2)
         plt.plot(np.arange(len(diffP)),np.zeros(len(diffP))-sigmaP,'b--',linewidth=2)
         plt.plot(np.arange(len(diffP)),np.zeros(len(diffP))+2*sigmaP,'--',color=(0.3,0.3,1),linewidth=1.5)
@@ -610,7 +659,6 @@ if args.best:
         if swaves:
             fig2 = plt.figure()
             plt.hold(True)
-            plt.grid(True)
             plt.plot(np.arange(len(diffS)),np.zeros(len(diffS))+sigmaS,'b--',linewidth=2)
             plt.plot(np.arange(len(diffS)),np.zeros(len(diffS))-sigmaS,'b--',linewidth=2)
             plt.plot(np.arange(len(diffS)),np.zeros(len(diffS))+2*sigmaS,'--',color=(0.3,0.3,1),linewidth=1.5)
@@ -681,7 +729,6 @@ if args.best:
     for i in np.arange(nBest):
         if iterationBest[i] > args.treshold:
             plt.hold(True)
-            plt.grid(True)
             if i == idxBestP:
                 plt.plot(bestP[i][:,1],zFilt,linewidth=4,label="Best model")
             else:
@@ -701,7 +748,6 @@ if args.best:
         for i in np.arange(nBest):
             if iterationBest[i] > args.treshold:
                 plt.hold(True)
-                plt.grid(True)
                 if i == idxBestS:
                     plt.plot(bestS[i][:,1],zFilt,linewidth=4,label="Best model")
                 else:
@@ -724,7 +770,6 @@ if args.vpvs:
         for i in np.arange(nbt):
             plt.figure()
             plt.hold(True)
-            plt.grid(True)
             vpFractionalUncertainty = 100*np.sqrt(varPs[i][:,1])/averagesP[i][:,1] # Ex: is vp=2500+/-100m/s -> fractional uncertainty 4% vp = 2500+/-4%
             vsFractionalUncertainty = 100*np.sqrt(varSs[i][:,1])/averagesS[i][:,1] # Ex: is vs=2500+/-100m/s -> fractional uncertainty 4% vs = 2500+/-4%
             ratioFractionalUncertainty = vpFractionalUncertainty + vsFractionalUncertainty
@@ -750,10 +795,15 @@ if args.vpvs:
                 ES[ii-1]=float(bestModel.split("E")[1].split(code)[0].strip("."))
                 bestS[ii-1]=np.loadtxt(args.pathToDir+bestModel)
             from operator import itemgetter
-            idxBestP=min(enumerate(EP), key=itemgetter(1))[0] # index of best model
-            idxBestS=min(enumerate(ES), key=itemgetter(1))[0] # index of best S model (it is the same one!)
+            idxBestP=[]
+            idxBestS=[]
+            if EP:
+                idxBestP=min(enumerate(EP), key=itemgetter(1))[0] # index of best model
+            if ES:
+                idxBestS=min(enumerate(ES), key=itemgetter(1))[0] # index of best S model (it is the same one!)
             # End of loading best profiles
-            plt.plot(bestP[idxBestP][:,1]/bestS[idxBestS][:,1],zFilt,linewidth=4,label="Vp/Vs of the best model")
+            if EP:
+                plt.plot(bestP[idxBestP][:,1]/bestS[idxBestS][:,1],zFilt,linewidth=4,label="Vp/Vs of the best model")
             plt.rc('text', usetex=True)
             plt.rc('font', family='serif')
             plt.xlabel(r'Ratio Vp/Vs',fontsize='14')
@@ -764,13 +814,14 @@ if args.vpvs:
             plt.legend()
         plt.figure()
         plt.hold(True)
-        plt.grid(True)
         vpFractionalUncertainty = 100*np.sqrt(globalVarP[:,1])/globalAverageP[:,1] # Ex: is vp=2500+/-100m/s -> fractional uncertainty 4% vp = 2500+/-4%
         vsFractionalUncertainty = 100*np.sqrt(globalVarS[:,1])/globalAverageS[:,1] # Ex: is vs=2500+/-100m/s -> fractional uncertainty 4% vs = 2500+/-4%
         ratioFractionalUncertainty = vpFractionalUncertainty + vsFractionalUncertainty
         meanRatio = globalAverageP[:,1]/globalAverageS[:,1]
         numericalUncertainty = meanRatio*(vpFractionalUncertainty + vsFractionalUncertainty)/100
-        plt.plot(meanRatio + numericalUncertainty,zFilt,linestyle='--',color=(0.3,0.3,0.7),label="Standard deviation")
+        plt.plot(meanRatio + np.sqrt(globalVarVpVs[:,1])/3,zFilt,linestyle='--',color=(0.3,0.5,0.7),label="Real standard deviation")
+        plt.plot(meanRatio - np.sqrt(globalVarVpVs[:,1])/3,zFilt,linestyle='--',color=(0.3,0.5,0.7))
+        plt.plot(meanRatio + numericalUncertainty,zFilt,linestyle='--',color=(0.3,0.3,0.7),label="Approx standard deviation")
         plt.plot(meanRatio - numericalUncertainty,zFilt,linestyle='--',color=(0.3,0.3,0.7))
         plt.plot(meanRatio,zFilt,label="Global average Vp/Vs")
         # Load best profiles :
@@ -790,10 +841,15 @@ if args.vpvs:
             ES[ii-1]=float(bestModel.split("E")[1].split(code)[0].strip("."))
             bestS[ii-1]=np.loadtxt(args.pathToDir+bestModel)
         from operator import itemgetter
-        idxBestP=min(enumerate(EP), key=itemgetter(1))[0] # index of best model
-        idxBestS=min(enumerate(ES), key=itemgetter(1))[0] # index of best S model (it is the same one!)
+        idxBestP=[]
+        idxBestS=[]
+        if EP:
+            idxBestP=min(enumerate(EP), key=itemgetter(1))[0] # index of best model
+        if ES:
+            idxBestS=min(enumerate(ES), key=itemgetter(1))[0] # index of best S model (it is the same one!)
         # End of loading best profiles
-        plt.plot(bestP[idxBestP][:,1]/bestS[idxBestS][:,1],zFilt,linewidth=4,label="Vp/Vs of the best model")
+        if EP:
+            plt.plot(bestP[idxBestP][:,1]/bestS[idxBestS][:,1],zFilt,linewidth=4,label="Vp/Vs of the best model")
         if analytical:
             plt.plot(realP[:,1]/realS[:,1],z,color=(0,0,0.5),linewidth=4,label="Real Vp/Vs")
         plt.rc('text', usetex=True)
@@ -805,18 +861,41 @@ if args.vpvs:
         plt.ylim(ymax=zFilt.min())
         plt.legend()
 
+if args.filtering:
+
+    for i,filteredCurve in enumerate(filteredPcurve):
+        fig = plt.figure(figsize=(4,6))
+        plt.hold(True)
+        plt.plot(firstGuessP[:,1],z,color=(0.5,0.5,0.95))
+        #if analytical:
+        #    plt.plot(realP[:,1],z,color=(0,0,0.5),linewidth=4)
+        plt.plot(filteredCurve[:,1],z,color=(0.5,0,0),linewidth=4,label=waveletFiltered[i])
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif')
+        plt.xlabel(r'Wave speed (m.s$^{-1}$)',fontsize=16)
+        plt.ylabel(r'Depth (m)',fontsize=16)
+        plt.ylim(ymax=z.max())
+        plt.gca().invert_yaxis()
+        plt.tick_params(axis='x', labelsize=16)
+        plt.tick_params(axis='y', labelsize=16)
+        plt.locator_params(nbins=5)
+        plt.legend()
+
+
+
 ################################ SWAPS ################################
 if args.swaps:
     print "Not implemented for now"
-#    plt.figure()
-#   plt.plot(ll[ll[:,2]==3,1],ll[ll[:,2]==3,3])
-#plot(exch(exch(:,2)==3,1),exch(exch(:,2)==3,3),'k')
+    plt.figure()
+    plt.plot(ll[ll[:,2]==3,1],ll[ll[:,1]==4,2])
+    #plot(exch(exch(:,2)==3,1),exch(exch(:,2)==3,3),'k')
 # plot(exch(exch(:,2)==3,1),exch(exch(:,2)==3,3),'y')
 # plot(exch(exch(:,2)==2,1),exch(exch(:,2)==2,3),'c')
 #plot(exch(exch(:,2)==1,1),exch(exch(:,2)==1,3),'r')
 #plot(exch(exch(:,2)==0,1),exch(exch(:,2)==0,3),'b')
 
 ################################ PAPER ################################
+
 if args.paper:
     ### GEOMETRY ###
     fig = plt.figure()
@@ -839,7 +918,8 @@ if args.paper:
 
     ### LOGS AND PRIOR ###
     fontsize=18
-    fig2 = plt.figure(figsize=(8,6))
+    fig2 = plt.figure(figsize=(6,8))
+    plt.gcf().subplots_adjust(left=0.15)
     plt.hold(True)
     plt.plot(firstGuessP[:,1],z,color=(0.5,0.5,0.95))
     if (swaves):
@@ -857,14 +937,16 @@ if args.paper:
     plt.ylim(ymax=z.max())
     plt.gca().invert_yaxis()
     if nPriorProfiles > 0:
-        plt.figure(figsize=(8,6))
+        plt.figure(figsize=(6,8))
+        plt.gcf().subplots_adjust(left=0.15)
         plt.hold(True)
         plt.plot(firstGuessP[:,1],z,color=(0.5,0.5,0.95),alpha=0.5,label="P wave sonic log")
         for i in np.arange(nPriorProfiles):
-            if i == 0:
-                plt.plot(priorP[i][:,1],z,'m',label="P wave velocity profiles from prior")
-            else:
-                plt.plot(priorP[i][:,1],z,'m')
+            if i%3 == 1:
+                if i == 1:
+                    plt.plot(priorP[i][:,1],z,'m',label="P wave velocity profiles from prior")
+                else:
+                    plt.plot(priorP[i][:,1],z,'m')
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif')
         plt.xlabel('Velocity (m.s$^{-1}$)',fontsize=fontsize)
@@ -873,22 +955,27 @@ if args.paper:
         plt.tick_params(axis='y', labelsize=fontsize-2)
         plt.ylim(ymin=z.max())
         plt.ylim(ymax=z.min())
+        plt.legend(loc=0,fontsize=16)
         if swaves:
+            plt.figure(figsize=(6,8))
+            plt.gcf().subplots_adjust(left=0.15)
+            plt.hold(True)
             plt.plot(firstGuessS[:,1],z,color=(0.5,0.95,0.5),alpha=0.5,label="S wave sonic log")
             for i in np.arange(nPriorProfiles):
-                if i == 0:
-                    plt.plot(priorS[i][:,1],z,'y',label="S wave velocity profiles from prior")
-                else:
-                    plt.plot(priorS[i][:,1],z,'y')
+                if i%3 == 1:
+                    if i == 1:
+                        plt.plot(priorS[i][:,1],z,'y',label="S wave velocity profiles from prior")
+                    else:
+                        plt.plot(priorS[i][:,1],z,'y')
             plt.rc('text', usetex=True)
             plt.rc('font', family='serif')
-            #plt.xlabel('S wave velocity profiles from prior (m.s$^{-1}$)',fontsize=fontsize)
+            plt.xlabel('Velocity (m.s$^{-1}$)',fontsize=fontsize)
             plt.ylabel('Depth (m)',fontsize=fontsize)
             plt.ylim(ymin=z.max())
             plt.ylim(ymax=z.min())
             plt.tick_params(axis='x', labelsize=fontsize-2)
             plt.tick_params(axis='y', labelsize=fontsize-2)
-        plt.legend(loc=0,fontsize=16)
+            plt.legend(loc=0,fontsize=16)
 
     ### ENERGY ###
     plt.figure(figsize=(8,6))
@@ -914,71 +1001,79 @@ if args.paper:
     iterationBest=[i for i in iterationBest if i>args.treshold]
     iteration=np.arange(nit)
     for i in np.arange(nbt):
-        plt.semilogy(iteration,chains[i][:,-1]*T[i])
+        if i<20:
+            if len(iteration) == len(chains[i][:,-1]):
+                plt.semilogy(iteration,chains[i][:,-1]*T[i])
+            else:
+                miniIteration = min(len(iteration),len(chains[i][:,-1]))
+                plt.semilogy(iteration[:miniIteration],chains[i][:miniIteration,-1]*T[i])
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     flagForLabel=True
     plt.semilogy(itBestE, T[chainBest]*chains[chainBest][:,-1][itBestE], 'rD', label="Best model")
-#    if recalculate_t0 is True:
-#        if swaves:
-#            plt.semilogy(iteration,np.zeros(nit)+nStats*nShots+ep,'b--',linewidth=2,label=r'Behind that line every model can be acceptable ($1\sigma$ misfit for each measurement)')
-#        else:
-#            plt.semilogy(iteration,np.zeros(nit)+nStats*nShots/2.0+ep,'b--',linewidth=2)
+    if recalculate_t0 is True:
+        if swaves:
+            plt.semilogy(iteration,np.zeros(nit)+nStats*nShots+ep,'b--',linewidth=2) #,label=r'Behind that line every model can be acceptable ($1\sigma$ misfit for each measurement)')
+        else:
+            plt.semilogy(iteration,np.zeros(nit)+nStats*nShots/2.0+ep,'b--',linewidth=2)
     plt.semilogy(iteration,np.zeros(nit)+ep,label="Prior's energy")
     plt.xlim(xmax=iteration.max())
     plt.rc('font', family='serif')
     plt.xlabel('Iteration',fontsize=18)
+    #plt.ylim(ymin=1500,ymax=2300)
     plt.ylabel('Energy',fontsize=18)
     plt.tick_params(axis='x', labelsize=16)
     plt.tick_params(axis='y', labelsize=16)
     plt.legend(loc=0,numpoints=1,fontsize=16)
 
     ### VP/VS ###
-    for i in [2]:
-        plt.figure()
-        plt.hold(True)
-        plt.grid(True)
-        vpFractionalUncertainty = 100*np.sqrt(varPs[i][:,1])/averagesP[i][:,1] # Ex: is vp=2500+/-100m/s -> fractional uncertainty 4% vp = 2500+/-4%
-        vsFractionalUncertainty = 100*np.sqrt(varSs[i][:,1])/averagesS[i][:,1] # Ex: is vs=2500+/-100m/s -> fractional uncertainty 4% vs = 2500+/-4%
-        ratioFractionalUncertainty = vpFractionalUncertainty + vsFractionalUncertainty
-        meanRatio = averagesP[i][:,1]/averagesS[i][:,1]
-        numericalUncertainty = meanRatio*(vpFractionalUncertainty + vsFractionalUncertainty)/100
-        pdense(zFilt,meanRatio,numericalUncertainty,M)
-        plt.plot(meanRatio + numericalUncertainty,zFilt,linestyle='--',color=(0.3,0.3,0.7),label="Standard deviation")
-        plt.plot(meanRatio - numericalUncertainty,zFilt,linestyle='--',color=(0.3,0.3,0.7))
-        plt.plot(meanRatio,zFilt,label="Average Vp/Vs")
-        # Load best profiles :
-        nBest=len(glob.glob1(args.pathToDir,"bestPprofile*"))
-        bestP=[0]*nBest
-        bestS=[0]*nBest
-        EP=[0]*nBest
-        ES=[0]*nBest
-        ii=0
-        for bestModel in glob.glob1(args.pathToDir,"bestPprofile*"):
-            ii=ii+1
-            EP[ii-1]=float(bestModel.split("E")[1].split(code)[0].strip("."))
-            bestP[ii-1]=np.loadtxt(args.pathToDir+bestModel)
-        ii=0
-        for bestModel in glob.glob1(args.pathToDir,"bestSprofile*"):
-            ii=ii+1
-            ES[ii-1]=float(bestModel.split("E")[1].split(code)[0].strip("."))
-            bestS[ii-1]=np.loadtxt(args.pathToDir+bestModel)
-        from operator import itemgetter
-        idxBestP=min(enumerate(EP), key=itemgetter(1))[0] # index of best model
-        idxBestS=min(enumerate(ES), key=itemgetter(1))[0] # index of best S model (it is the same one!)
-        # End of loading best profiles
-        plt.plot(bestP[idxBestP][:,1]/bestS[idxBestS][:,1],zFilt,'r',linewidth=4,label="Vp/Vs of the best model")
-        plt.rc('text', usetex=True)
-        plt.rc('font', family='serif')
-        plt.xlabel(r'Ratio Vp/Vs',fontsize=18)
-        plt.ylabel(r'Depth (m)',fontsize=18)
-        #plt.ylim(ymax=zFilt.max())
-        plt.ylim(ymin=zFilt.max())
-        plt.ylim(ymax=zFilt.min())
-        plt.xlim([1.2,2.6])
-        plt.tick_params(axis='x', labelsize=16)
-        plt.tick_params(axis='y', labelsize=16)
-        plt.legend(loc=7,fontsize=16)
+    plt.figure(figsize=(8,10))
+    plt.hold(True)
+    plt.plot(firstGuessP[:,1]/firstGuessS[:,1],z,color=(0.95,0.9,0.9),linewidth=1,label="Sonic logs Vp/Vs", zorder=1)
+    vpFractionalUncertainty = 100*np.sqrt(globalVarP[:,1])/globalAverageP[:,1] # Ex: is vp=2500+/-100m/s -> fractional uncertainty 4% vp = 2500+/-4%
+    vsFractionalUncertainty = 100*np.sqrt(globalVarS[:,1])/globalAverageS[:,1] # Ex: is vs=2500+/-100m/s -> fractional uncertainty 4% vs = 2500+/-4%
+    ratioFractionalUncertainty = vpFractionalUncertainty + vsFractionalUncertainty
+    meanRatio = globalAverageP[:,1]/globalAverageS[:,1]
+    numericalUncertainty = meanRatio*(vpFractionalUncertainty + vsFractionalUncertainty)/100
+    #pdense(zFilt,meanRatio,numericalUncertainty,M)
+    pdense(zFilt,meanRatio,np.sqrt(globalVarVpVs[:,1])/3,M)
+    plt.plot(meanRatio + np.sqrt(globalVarVpVs[:,1])/3,zFilt,linestyle='--',color=(0.3,0.3,0.7),label="Standard deviation")
+    plt.plot(meanRatio - np.sqrt(globalVarVpVs[:,1])/3,zFilt,linestyle='--',color=(0.3,0.3,0.7))
+    #plt.plot(meanRatio + numericalUncertainty,zFilt,linestyle='--',color=(0.3,0.3,0.7),label="Standard deviation")
+    #plt.plot(meanRatio - numericalUncertainty,zFilt,linestyle='--',color=(0.3,0.3,0.7))
+    plt.plot(meanRatio,zFilt,label="Average Vp/Vs")
+    # Load best profiles :
+    nBest=len(glob.glob1(args.pathToDir,"bestPprofile*"))
+    bestP=[0]*nBest
+    bestS=[0]*nBest
+    EP=[0]*nBest
+    ES=[0]*nBest
+    ii=0
+    for bestModel in glob.glob1(args.pathToDir,"bestPprofile*"):
+        ii=ii+1
+        EP[ii-1]=float(bestModel.split("E")[1].split(code)[0].strip("."))
+        bestP[ii-1]=np.loadtxt(args.pathToDir+bestModel)
+    ii=0
+    for bestModel in glob.glob1(args.pathToDir,"bestSprofile*"):
+        ii=ii+1
+        ES[ii-1]=float(bestModel.split("E")[1].split(code)[0].strip("."))
+        bestS[ii-1]=np.loadtxt(args.pathToDir+bestModel)
+    from operator import itemgetter
+    idxBestP=min(enumerate(EP), key=itemgetter(1))[0] # index of best model
+    idxBestS=min(enumerate(ES), key=itemgetter(1))[0] # index of best S model (it is the same one!)
+    # End of loading best profiles
+    plt.plot(bestP[idxBestP][:,1]/bestS[idxBestS][:,1],zFilt,'g',linewidth=2,label="Vp/Vs of the best model")
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+    plt.xlabel(r'Ratio Vp/Vs',fontsize=18)
+    plt.ylabel(r'Depth (m)',fontsize=18)
+    #plt.ylim(ymax=zFilt.max())
+    plt.ylim(ymin=zFilt.max())
+    plt.ylim(ymax=zFilt.min())
+    plt.xlim([0.5,3.5])
+    plt.tick_params(axis='x', labelsize=16)
+    plt.tick_params(axis='y', labelsize=16)
+    plt.legend(loc=4,fontsize=16)
 
     ### RESIDUALS ###
     if bestModelCalculated:
@@ -996,7 +1091,6 @@ if args.paper:
         diffS=diffDataBestModel[:,1][timesData[:,1]>0]
         fig = plt.figure()
         plt.hold(True)
-        plt.grid(True)
         plt.plot(np.arange(len(diffP)),np.zeros(len(diffP))+sigmaP,'b--',linewidth=2)
         plt.plot(np.arange(len(diffP)),np.zeros(len(diffP))-sigmaP,'b--',linewidth=2)
         plt.plot(np.arange(len(diffP)),np.zeros(len(diffP))+2*sigmaP,'--',color=(0.3,0.3,1),linewidth=1.5)
@@ -1018,7 +1112,6 @@ if args.paper:
         if swaves:
             fig2 = plt.figure()
             plt.hold(True)
-            plt.grid(True)
             plt.plot(np.arange(len(diffS)),np.zeros(len(diffS))+sigmaS,'b--',linewidth=2)
             plt.plot(np.arange(len(diffS)),np.zeros(len(diffS))-sigmaS,'b--',linewidth=2)
             plt.plot(np.arange(len(diffS)),np.zeros(len(diffS))+2*sigmaS,'--',color=(0.3,0.3,1),linewidth=1.5)
@@ -1045,63 +1138,197 @@ if args.paper:
         print "The best model has not been calculated"
 
     ### RESULTS ###
+#    lb=qp+"\% confidence interval"
+#    maxiP=globalMaxP[:,1].max()
+#    miniP=globalMinP[:,1].min()
+#    maxiS=globalMaxS[:,1].max()
+#    miniS=globalMinS[:,1].min()
+#    plt.figure(figsize=(8,10))
+#    plt.hold(True)
+#    plt.plot(firstGuessP[:,1],z,color=(0.5,0.5,0.95),linewidth=1,label="Sonic log", alpha=0.4, zorder=1)
+#    if analytical:
+#        plt.plot(realP[:,1],z,color=(0,0,0.5),linewidth=4,label="Real velocity profile")
+#    plt.plot(globalAverageP[:,1],zFilt,linewidth=4,label="Global average")
+#    pdense(zFilt,globalAverageP[:,1],np.sqrt(globalVarP[:,1]),M)
+#    plt.plot(globalAverageP[:,1]+np.sqrt(globalVarP[:,1]),zFilt,linestyle='--',color=(0.3,0.3,0.7),label="Standard deviation")
+#    plt.plot(globalAverageP[:,1]-np.sqrt(globalVarP[:,1]),zFilt,linestyle='--',color=(0.3,0.3,0.7))
+#    plt.plot(bestP[idxBestP][:,1],zFilt,linewidth=4,label="Best model")
+#    if args.show_ranges:
+#        plt.plot(globalMaxP[:,1],zFilt,color=(1,0,0),label="Range investigated by all chains")
+#        plt.plot(globalMinP[:,1],zFilt,color=(1,0,0))
+#    plt.rc('text', usetex=True)
+#    plt.rc('font', family='serif')
+#    plt.xlabel('P wave velocity (m.s$^{-1}$)',fontsize=18)
+#    plt.ylabel('Depth (m)',fontsize=18)
+#    plt.xlim(2500, 6500)
+#    plt.legend(fontsize=16)
+#    plt.ylim(ymin=zFilt.max())
+#    plt.ylim(ymax=zFilt.min())
+#    plt.tick_params(axis='x', labelsize=16)
+#    plt.tick_params(axis='y', labelsize=16)
+#    if swaves:
+#        plt.figure(figsize=(8,10))
+#        if args.show_ranges:
+#            plt.plot(globalMaxP[:,1],zFilt,color=(1,0,0),label="Range investigated by all chains")
+#            plt.plot(globalMinP[:,1],zFilt,color=(1,0,0))
+#        plt.plot(firstGuessS[:,1],z,color=(0.5,0.95,0.5),linewidth=1,label="Sonic log", alpha=0.4, zorder=1)
+#        if analytical:
+#            plt.plot(realS[:,1],z,color=(0,0.5,0),linewidth=4,label="Real velocity profile")
+#        plt.plot(globalAverageS[:,1],zFilt,linewidth=4,label="Global average")
+#        pdense(zFilt,globalAverageS[:,1],np.sqrt(globalVarS[:,1]),M)
+#        plt.plot(globalAverageS[:,1]+np.sqrt(globalVarS[:,1]),zFilt,linestyle='--',color=(0.3,0.3,0.7),label="Standard deviation")
+#        plt.plot(globalAverageS[:,1]-np.sqrt(globalVarP[:,1]),zFilt,linestyle='--',color=(0.3,0.3,0.7))
+#        plt.plot(bestS[idxBestS][:,1],zFilt,linewidth=4,label="Best model")
+#        plt.rc('text', usetex=True)
+#        plt.rc('font', family='serif')
+#        plt.xlabel('S wave velocity (m.s$^{-1}$)',fontsize=18)
+#        plt.ylabel('Depth (m)',fontsize=18)
+#        plt.xlim(1000,5000)
+#        plt.legend(fontsize=16)
+#        plt.ylim(ymin=zFilt.max())
+#        plt.ylim(ymax=zFilt.min())
+#        plt.tick_params(axis='x', labelsize=16)
+#        plt.tick_params(axis='y', labelsize=16)
+
+
+    ### RESULTS ###
     lb=qp+"\% confidence interval"
     maxiP=globalMaxP[:,1].max()
     miniP=globalMinP[:,1].min()
     maxiS=globalMaxS[:,1].max()
     miniS=globalMinS[:,1].min()
-    for i in [2]:
+    plt.figure(figsize=(8,10))
+    plt.hold(True)
+    plt.plot(firstGuessP[:,1],z,color=(0.9,0.9,0.99),linewidth=1,label="Sonic log", zorder=1)
+    #plt.plot(firstGuessP[:,1],z,color=(0.5,0.5,0.95),linewidth=1,label="Sonic log", alpha=0.2, zorder=1)
+    if analytical:
+        plt.plot(realP[:,1],z,color=(0,0,0.5),linewidth=4,label="Real velocity profile")
+    pdense(zFilt,globalAverageP[:,1],np.sqrt(globalVarP[:,1]),M)
+    #pdense(zFilt,(qSupPs[i][:,1]+qInfPs[i][:,1])/2,(qSupPs[i][:,1]-qInfPs[i][:,1])/2,M)
+    #plt.plot(qSupPs[i][:,1],zFilt,linestyle='--',color=(0.3,0.3,0.7),label=lb)
+    #plt.plot(qInfPs[i][:,1],zFilt,linestyle='--',color=(0.3,0.3,0.7))
+    plt.plot(globalAverageP[:,1],zFilt,linewidth=2,label="Average model")
+    plt.plot(bestP[idxBestP][:,1],zFilt,linewidth=2,label="Best model")
+    plt.plot(globalAverageP[:,1]+np.sqrt(globalVarP[:,1]),zFilt,linestyle='--',color=(0.3,0.3,0.7),label="Standard deviation")
+    plt.plot(globalAverageP[:,1]-np.sqrt(globalVarP[:,1]),zFilt,linestyle='--',color=(0.3,0.3,0.7))
+    if args.show_ranges:
+        plt.plot(globalMaxP[:,1],zFilt,color=(1,0,0),label="Range investigated by all chains")
+        plt.plot(globalMinP[:,1],zFilt,color=(1,0,0))
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+    plt.xlabel('P wave velocity (m.s$^{-1}$)',fontsize=18)
+    plt.ylabel('Depth (m)',fontsize=18)
+    plt.xlim(2000, 7500)
+    plt.legend(loc=0,fontsize=16)
+    plt.ylim(ymin=zFilt.max())
+    plt.ylim(ymax=zFilt.min())
+    plt.tick_params(axis='x', labelsize=16)
+    plt.tick_params(axis='y', labelsize=16)
+    if swaves:
         plt.figure(figsize=(8,10))
-        plt.hold(True)
-        plt.plot(firstGuessP[:,1],z,color=(0.5,0.5,0.95),linewidth=1,label="Sonic log", alpha=0.4, zorder=1)
-        if analytical:
-            plt.plot(realP[:,1],z,color=(0,0,0.5),linewidth=4,label="Real velocity profile")
-        pdense(zFilt,(qSupPs[i][:,1]+qInfPs[i][:,1])/2,(qSupPs[i][:,1]-qInfPs[i][:,1])/2,M)
-        plt.plot(qSupPs[i][:,1],zFilt,linestyle='--',color=(0.3,0.3,0.7),label=lb)
-        plt.plot(qInfPs[i][:,1],zFilt,linestyle='--',color=(0.3,0.3,0.7))
-        plt.plot(averagesP[i][:,1],zFilt,linewidth=4,label="Average model")
-        plt.plot(bestP[idxBestP][:,1],zFilt,linewidth=4,label="Best model")
-     #   plt.plot(averagesP[i][:,1]+np.sqrt(varPs[i][:,1]),zFilt,color=(0.5,0.5,0),label="Standard deviation")
-     #   plt.plot(averagesP[i][:,1]-np.sqrt(varPs[i][:,1]),zFilt,color=(0.5,0.5,0))
         if args.show_ranges:
-            plt.plot(globalMaxP[:,1],zFilt,color=(1,0,0),label="Range investigated by all chains")
-            plt.plot(globalMinP[:,1],zFilt,color=(1,0,0))
+            plt.plot(maxS[i][:,1],zFilt,color=(0.4,0.8,0.8),label="Range investigated by chain "+str(i))
+            plt.plot(minS[i][:,1],zFilt,color=(0.4,0.8,0.8))
+        plt.plot(firstGuessS[:,1],z,color=(0.89,0.98,0.89),linewidth=1,label="Sonic log",zorder=1)
+        if analytical:
+            plt.plot(realS[:,1],z,color=(0,0.5,0),linewidth=4,label="Real velocity profile")
+        #pdense(zFilt,(qSupSs[i][:,1]+qInfSs[i][:,1])/2,(qSupSs[i][:,1]-qInfSs[i][:,1])/2,M)
+        pdense(zFilt,globalAverageS[:,1],np.sqrt(globalVarS[:,1]),M)
+        #plt.plot(qSupSs[i][:,1],zFilt,linestyle='--',color=(0.3,0.3,0.7),label=lb)
+        #plt.plot(qInfSs[i][:,1],zFilt,linestyle='--',color=(0.3,0.3,0.7))
+        plt.plot(globalAverageS[:,1],zFilt,linewidth=2,label="Average model")
+        plt.plot(bestS[idxBestS][:,1],zFilt,linewidth=2,label="Best model")
+        plt.plot(globalAverageS[:,1]+np.sqrt(globalVarS[:,1]),zFilt,linestyle='--',color=(0.3,0.3,0.7),label="Standard deviation")
+        plt.plot(globalAverageS[:,1]-np.sqrt(globalVarS[:,1]),zFilt,linestyle='--',color=(0.3,0.3,0.7))
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif')
-        plt.xlabel('P wave velocity (m.s$^{-1}$)',fontsize=18)
+        plt.xlabel('S wave velocity (m.s$^{-1}$)',fontsize=18)
         plt.ylabel('Depth (m)',fontsize=18)
-        plt.xlim(2500, 6500)
-        plt.legend(fontsize=16)
+        plt.xlim(500,4500)
+        plt.legend(fontsize=16,loc=0)
         plt.ylim(ymin=zFilt.max())
         plt.ylim(ymax=zFilt.min())
         plt.tick_params(axis='x', labelsize=16)
         plt.tick_params(axis='y', labelsize=16)
-        if swaves:
-            plt.figure(figsize=(8,10))
-            if args.show_ranges:
-                plt.plot(maxS[i][:,1],zFilt,color=(0.4,0.8,0.8),label="Range investigated by chain "+str(i))
-                plt.plot(minS[i][:,1],zFilt,color=(0.4,0.8,0.8))
-            plt.plot(firstGuessS[:,1],z,color=(0.5,0.95,0.5),linewidth=1,label="Sonic log", alpha=0.4, zorder=1)
-            if analytical:
-                plt.plot(realS[:,1],z,color=(0,0.5,0),linewidth=4,label="Real velocity profile")
-            pdense(zFilt,(qSupSs[i][:,1]+qInfSs[i][:,1])/2,(qSupSs[i][:,1]-qInfSs[i][:,1])/2,M)
-            plt.plot(qSupSs[i][:,1],zFilt,linestyle='--',color=(0.3,0.3,0.7),label=lb)
-            plt.plot(qInfSs[i][:,1],zFilt,linestyle='--',color=(0.3,0.3,0.7))
-            plt.plot(averagesS[i][:,1],zFilt,linewidth=4,label="Average model")
-            plt.plot(bestS[idxBestS][:,1],zFilt,linewidth=4,label="Best model")
-     #       plt.plot(averagesS[i][:,1]+np.sqrt(varSs[i][:,1]),zFilt,color=(0.5,0.5,0),label="Standard deviation")
-      #      plt.plot(averagesS[i][:,1]-np.sqrt(varSs[i][:,1]),zFilt,color=(0.5,0.5,0))
-            plt.rc('text', usetex=True)
-            plt.rc('font', family='serif')
-            plt.xlabel('S wave velocity (m.s$^{-1}$)',fontsize=18)
-            plt.ylabel('Depth (m)',fontsize=18)
-            plt.xlim(1000,5000)
-            plt.legend(fontsize=16)
-            plt.ylim(ymin=zFilt.max())
-            plt.ylim(ymax=zFilt.min())
-            plt.tick_params(axis='x', labelsize=16)
-            plt.tick_params(axis='y', labelsize=16)
+
+    ### Filtered Curves ###
+    for i,filteredCurve in enumerate(filteredPcurve):
+        fig = plt.figure(figsize=(4,6))
+        plt.gcf().subplots_adjust(left=0.22)
+        plt.hold(True)
+        plt.plot(firstGuessP[:,1],z,color=(0.5,0.5,0.95))
+        #if analytical:
+        #    plt.plot(realP[:,1],z,color=(0,0,0.5),linewidth=4)
+        plt.plot(filteredCurve[:,1],z,color=(0.5,0,0),linewidth=4,label=waveletFiltered[i])
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif')
+        plt.xlabel(r'Wave speed (m.s$^{-1}$)',fontsize=18)
+        plt.ylabel(r'Depth (m)',fontsize=18)
+        plt.ylim(ymax=z.max())
+        plt.gca().invert_yaxis()
+        plt.legend(fontsize=16)
+        plt.tick_params(axis='x', labelsize=16)
+        plt.tick_params(axis='y', labelsize=16)
+        plt.locator_params(nbins=5)
 
 plt.show()
 
+
+#    ### RESULTS ###
+#    lb=qp+"\% confidence interval"
+#    maxiP=globalMaxP[:,1].max()
+#    miniP=globalMinP[:,1].min()
+#    maxiS=globalMaxS[:,1].max()
+#    miniS=globalMinS[:,1].min()
+#    for i in [2]:
+#        plt.figure(figsize=(8,10))
+#        plt.hold(True)
+#        plt.plot(firstGuessP[:,1],z,color=(0.5,0.5,0.95),linewidth=1,label="Sonic log", alpha=0.4, zorder=1)
+#        if analytical:
+#            plt.plot(realP[:,1],z,color=(0,0,0.5),linewidth=4,label="Real velocity profile")
+#        pdense(zFilt,(qSupPs[i][:,1]+qInfPs[i][:,1])/2,(qSupPs[i][:,1]-qInfPs[i][:,1])/2,M)
+#        plt.plot(qSupPs[i][:,1],zFilt,linestyle='--',color=(0.3,0.3,0.7),label=lb)
+#        plt.plot(qInfPs[i][:,1],zFilt,linestyle='--',color=(0.3,0.3,0.7))
+#        plt.plot(averagesP[i][:,1],zFilt,linewidth=4,label="Average model")
+#        plt.plot(bestP[idxBestP][:,1],zFilt,linewidth=4,label="Best model")
+#     #   plt.plot(averagesP[i][:,1]+np.sqrt(varPs[i][:,1]),zFilt,color=(0.5,0.5,0),label="Standard deviation")
+#     #   plt.plot(averagesP[i][:,1]-np.sqrt(varPs[i][:,1]),zFilt,color=(0.5,0.5,0))
+#        if args.show_ranges:
+#            plt.plot(globalMaxP[:,1],zFilt,color=(1,0,0),label="Range investigated by all chains")
+#            plt.plot(globalMinP[:,1],zFilt,color=(1,0,0))
+#        plt.rc('text', usetex=True)
+#        plt.rc('font', family='serif')
+#        plt.xlabel('P wave velocity (m.s$^{-1}$)',fontsize=18)
+#        plt.ylabel('Depth (m)',fontsize=18)
+#        plt.xlim(2500, 6500)
+#        plt.legend(fontsize=16)
+#        plt.ylim(ymin=zFilt.max())
+#        plt.ylim(ymax=zFilt.min())
+#        plt.tick_params(axis='x', labelsize=16)
+#        plt.tick_params(axis='y', labelsize=16)
+#        if swaves:
+#            plt.figure(figsize=(8,10))
+#            if args.show_ranges:
+#                plt.plot(maxS[i][:,1],zFilt,color=(0.4,0.8,0.8),label="Range investigated by chain "+str(i))
+#                plt.plot(minS[i][:,1],zFilt,color=(0.4,0.8,0.8))
+#            plt.plot(firstGuessS[:,1],z,color=(0.5,0.95,0.5),linewidth=1,label="Sonic log", alpha=0.4, zorder=1)
+#            if analytical:
+#                plt.plot(realS[:,1],z,color=(0,0.5,0),linewidth=4,label="Real velocity profile")
+#            pdense(zFilt,(qSupSs[i][:,1]+qInfSs[i][:,1])/2,(qSupSs[i][:,1]-qInfSs[i][:,1])/2,M)
+#            plt.plot(qSupSs[i][:,1],zFilt,linestyle='--',color=(0.3,0.3,0.7),label=lb)
+#            plt.plot(qInfSs[i][:,1],zFilt,linestyle='--',color=(0.3,0.3,0.7))
+#            plt.plot(averagesS[i][:,1],zFilt,linewidth=4,label="Average model")
+#            plt.plot(bestS[idxBestS][:,1],zFilt,linewidth=4,label="Best model")
+#     #       plt.plot(averagesS[i][:,1]+np.sqrt(varSs[i][:,1]),zFilt,color=(0.5,0.5,0),label="Standard deviation")
+#      #      plt.plot(averagesS[i][:,1]-np.sqrt(varSs[i][:,1]),zFilt,color=(0.5,0.5,0))
+#            plt.rc('text', usetex=True)
+#            plt.rc('font', family='serif')
+#            plt.xlabel('S wave velocity (m.s$^{-1}$)',fontsize=18)
+#            plt.ylabel('Depth (m)',fontsize=18)
+#            plt.xlim(1000,5000)
+#            plt.legend(fontsize=16)
+#            plt.ylim(ymin=zFilt.max())
+#            plt.ylim(ymax=zFilt.min())
+#            plt.tick_params(axis='x', labelsize=16)
+#            plt.tick_params(axis='y', labelsize=16)
 

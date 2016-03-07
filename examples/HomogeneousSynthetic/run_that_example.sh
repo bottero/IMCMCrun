@@ -6,7 +6,7 @@
 ###################################################
 
 # Recompile all ('yes' or 'no' or 'justWhatHasChanged')
-MAKEALL='no'
+MAKEALL='justWhatHasChanged'
 # MPI ('yes' or 'no')
 MPI='yes'
 # number of processes

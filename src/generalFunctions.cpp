@@ -164,5 +164,20 @@ const char* convertDoubleToChar(double value)
     strs << value;
     std::string strstr = strs.str();
     const char* valueChar = strstr.c_str();
+    //if (strlen(valueChar) == 0) {
+    //      std::cout << "????????" << strlen(valueChar) << std::endl;
+    //      std::cout << "   value:" << value << std::endl;
+    //      std::cout << "   strstr:" << strstr << std::endl;
+    //  exit(0);
+    //}
+    
     return valueChar;
+}
+
+std::string to_string(double x)
+// From a double (ex:4561.54) return a string
+{
+  std::ostringstream ss;
+  ss << x;
+  return ss.str();
 }

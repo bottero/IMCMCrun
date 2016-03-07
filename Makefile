@@ -23,8 +23,8 @@ EXEC_NAME = RealisticDataMCMC                         # Executable name
 ifeq ($(PAR),yes)
 CPP      = mpic++                    # C++ MPI compiler
 CF90     = mpif90                    # Fortran MPI compiler
-CPPFLAGS = -O3 -Wall -DPAR -I$(FFTW3_INCLUDE) -L$(FFTW3_LIB) -llib       # C++ compiler flags
-F90FLAGS = -O3 #-check nobounds -ftz -implicitnone -warn all -nogen-interface # -gen-interfaces Fortran compilation flags
+CPPFLAGS = -O3 -Wall -DPAR -I$(FFTW3_INCLUDE) -L$(FFTW3_LIB) -llib       # C++ compiler flags (for debugging replace -O3 by : -ggdb -g3 -O0)
+F90FLAGS = -O3 -check nobounds -ftz -implicitnone -warn all -nogen-interface # -gen-interfaces Fortran compilation flags
 # for debugging: change -O3 -check nobounds to -O0 -check all -debug -g -fp-stack-check -traceback -ftrapuv
 #LDFLAGS = -lgfortran -lm -lfftw3 -lmpfr -lgmp -I$(FFTW3_INCLUDE) -L$(FFTW3_LIB)      # Link flags !!! WARNING !! FOR GNU MPI COMPILERS CHANGE -lifcore TO -lgfortran
 LDFLAGS = -lifcore -lm -lfftw3 -lmpfr -lgmp -I$(FFTW3_INCLUDE) -L$(FFTW3_LIB)      # Link flags !!! WARNING !! FOR GNU MPI COMPILERS CHANGE -lifcore TO -lgfortran

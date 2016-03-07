@@ -1,0 +1,299 @@
+*********************** Importance resampling MCMC ***********************
+*************************** REALISTIC DATASET ****************************
+***************** configuration file for run number 344 ******************
+Starting time : 07/Mar/2016 17:32:24.
+Seed of the random number generator = 1457368344
+                           === MPI MODE ===
+6 processes running on : Precision-T7610
+
+D A T A S E T  U S E D
+
+  S waves are calculated
+It is an analytical run :
+For this simulation we already know the real velocity model, it has been loaded from the files : realProfileP.txt and realProfileS.txt
+These are the 5 first lines : (z vp vs)
+-1.96078 3500 2069.94 
+1.96078 3517.84 2082.89 
+5.88235 3531.24 2092.85 
+9.80392 3547.87 2104.12 
+13.7255 3564.07 2114.55 
+
+(dz = 3.92157)
+
+  The sources and receivers positions are on the files : /home1/bottero/Dropbox/Travail/StageLMA/DonneesRealistesLMA/IMCMCrun/examples/Synthetic1/dataExample/coordShots.txt/home1/bottero/Dropbox/Travail/StageLMA/DonneesRealistesLMA/IMCMCrun/examples/Synthetic1/dataExample/coordStats.txt
+  Number of shots : 3
+    Shot number 0 at (x=300, y=300, z=650)
+    Shot number 1 at (x=400, y=400, z=650)
+    Shot number 2 at (x=500, y=500, z=650)
+  Number of stations : 125
+    Station number 0 at (x=200, y=200, z=200)
+    Station number 1 at (x=200, y=200, z=300)
+    Station number 2 at (x=200, y=200, z=400)
+    Station number 3 at (x=200, y=200, z=500)
+    Station number 4 at (x=200, y=200, z=600)
+    Station number 5 at (x=200, y=200, z=200)
+    Station number 6 at (x=200, y=200, z=300)
+    Station number 7 at (x=200, y=200, z=400)
+    Station number 8 at (x=200, y=200, z=500)
+    Station number 9 at (x=200, y=200, z=600)
+    Station number 10 at (x=200, y=200, z=200)
+    Station number 11 at (x=200, y=200, z=300)
+    Station number 12 at (x=200, y=200, z=400)
+    Station number 13 at (x=200, y=200, z=500)
+    Station number 14 at (x=200, y=200, z=600)
+    Station number 15 at (x=200, y=200, z=200)
+    Station number 16 at (x=200, y=200, z=300)
+    Station number 17 at (x=200, y=200, z=400)
+    Station number 18 at (x=200, y=200, z=500)
+    Station number 19 at (x=200, y=200, z=600)
+    Station number 20 at (x=200, y=200, z=200)
+    Station number 21 at (x=200, y=200, z=300)
+    Station number 22 at (x=200, y=200, z=400)
+    Station number 23 at (x=200, y=200, z=500)
+    Station number 24 at (x=200, y=200, z=600)
+    Station number 25 at (x=300, y=300, z=200)
+    Station number 26 at (x=300, y=300, z=300)
+    Station number 27 at (x=300, y=300, z=400)
+    Station number 28 at (x=300, y=300, z=500)
+    Station number 29 at (x=300, y=300, z=600)
+    Station number 30 at (x=300, y=300, z=200)
+    Station number 31 at (x=300, y=300, z=300)
+    Station number 32 at (x=300, y=300, z=400)
+    Station number 33 at (x=300, y=300, z=500)
+    Station number 34 at (x=300, y=300, z=600)
+    Station number 35 at (x=300, y=300, z=200)
+    Station number 36 at (x=300, y=300, z=300)
+    Station number 37 at (x=300, y=300, z=400)
+    Station number 38 at (x=300, y=300, z=500)
+    Station number 39 at (x=300, y=300, z=600)
+    Station number 40 at (x=300, y=300, z=200)
+    Station number 41 at (x=300, y=300, z=300)
+    Station number 42 at (x=300, y=300, z=400)
+    Station number 43 at (x=300, y=300, z=500)
+    Station number 44 at (x=300, y=300, z=600)
+    Station number 45 at (x=300, y=300, z=200)
+    Station number 46 at (x=300, y=300, z=300)
+    Station number 47 at (x=300, y=300, z=400)
+    Station number 48 at (x=300, y=300, z=500)
+    Station number 49 at (x=300, y=300, z=600)
+    Station number 50 at (x=400, y=400, z=200)
+    Station number 51 at (x=400, y=400, z=300)
+    Station number 52 at (x=400, y=400, z=400)
+    Station number 53 at (x=400, y=400, z=500)
+    Station number 54 at (x=400, y=400, z=600)
+    Station number 55 at (x=400, y=400, z=200)
+    Station number 56 at (x=400, y=400, z=300)
+    Station number 57 at (x=400, y=400, z=400)
+    Station number 58 at (x=400, y=400, z=500)
+    Station number 59 at (x=400, y=400, z=600)
+    Station number 60 at (x=400, y=400, z=200)
+    Station number 61 at (x=400, y=400, z=300)
+    Station number 62 at (x=400, y=400, z=400)
+    Station number 63 at (x=400, y=400, z=500)
+    Station number 64 at (x=400, y=400, z=600)
+    Station number 65 at (x=400, y=400, z=200)
+    Station number 66 at (x=400, y=400, z=300)
+    Station number 67 at (x=400, y=400, z=400)
+    Station number 68 at (x=400, y=400, z=500)
+    Station number 69 at (x=400, y=400, z=600)
+    Station number 70 at (x=400, y=400, z=200)
+    Station number 71 at (x=400, y=400, z=300)
+    Station number 72 at (x=400, y=400, z=400)
+    Station number 73 at (x=400, y=400, z=500)
+    Station number 74 at (x=400, y=400, z=600)
+    Station number 75 at (x=500, y=500, z=200)
+    Station number 76 at (x=500, y=500, z=300)
+    Station number 77 at (x=500, y=500, z=400)
+    Station number 78 at (x=500, y=500, z=500)
+    Station number 79 at (x=500, y=500, z=600)
+    Station number 80 at (x=500, y=500, z=200)
+    Station number 81 at (x=500, y=500, z=300)
+    Station number 82 at (x=500, y=500, z=400)
+    Station number 83 at (x=500, y=500, z=500)
+    Station number 84 at (x=500, y=500, z=600)
+    Station number 85 at (x=500, y=500, z=200)
+    Station number 86 at (x=500, y=500, z=300)
+    Station number 87 at (x=500, y=500, z=400)
+    Station number 88 at (x=500, y=500, z=500)
+    Station number 89 at (x=500, y=500, z=600)
+    Station number 90 at (x=500, y=500, z=200)
+    Station number 91 at (x=500, y=500, z=300)
+    Station number 92 at (x=500, y=500, z=400)
+    Station number 93 at (x=500, y=500, z=500)
+    Station number 94 at (x=500, y=500, z=600)
+    Station number 95 at (x=500, y=500, z=200)
+    Station number 96 at (x=500, y=500, z=300)
+    Station number 97 at (x=500, y=500, z=400)
+    Station number 98 at (x=500, y=500, z=500)
+    Station number 99 at (x=500, y=500, z=600)
+    Station number 100 at (x=600, y=600, z=200)
+    Station number 101 at (x=600, y=600, z=300)
+    Station number 102 at (x=600, y=600, z=400)
+    Station number 103 at (x=600, y=600, z=500)
+    Station number 104 at (x=600, y=600, z=600)
+    Station number 105 at (x=600, y=600, z=200)
+    Station number 106 at (x=600, y=600, z=300)
+    Station number 107 at (x=600, y=600, z=400)
+    Station number 108 at (x=600, y=600, z=500)
+    Station number 109 at (x=600, y=600, z=600)
+    Station number 110 at (x=600, y=600, z=200)
+    Station number 111 at (x=600, y=600, z=300)
+    Station number 112 at (x=600, y=600, z=400)
+    Station number 113 at (x=600, y=600, z=500)
+    Station number 114 at (x=600, y=600, z=600)
+    Station number 115 at (x=600, y=600, z=200)
+    Station number 116 at (x=600, y=600, z=300)
+    Station number 117 at (x=600, y=600, z=400)
+    Station number 118 at (x=600, y=600, z=500)
+    Station number 119 at (x=600, y=600, z=600)
+    Station number 120 at (x=600, y=600, z=200)
+    Station number 121 at (x=600, y=600, z=300)
+    Station number 122 at (x=600, y=600, z=400)
+    Station number 123 at (x=600, y=600, z=500)
+    Station number 124 at (x=600, y=600, z=600)
+  Standard deviation of P wave arrival times : 0.0025
+  Standard deviation of S wave arrival times : 0.005
+  Number of points in P wave velocity first guess : 256
+  Number of points in S wave velocity first guessS : 256
+
+P R I O R  K N O W L E D G E  O N  T H E  P A R A M E T E R S
+
+
+Wavelet based parameterization
+  Using wavelets (5 in the list): db8 db12 haar coif3 coif5 
+  Number of parameters : 12 plus the wavelet type.  (DI : 1, DF : 20)
+  Wavelet:db8
+                  min     max     delta for T0   delta for T1   delta for T2   delta for T3   delta for T4   delta for T5   
+  Parameter 0 : 25297.2  59026.8     1686.48         1720.56         1899.58         2839.97         7779.89         33729.6           (refer to wavelet coefficient number 0 of the P wave velocity first guess)
+  Parameter 1 : 23447.3  54710.3     1563.15         1594.74         1760.67         2632.29         7210.97         31263           (refer to wavelet coefficient number 1 of the P wave velocity first guess)
+  Parameter 2 : 22668  52891.9     1511.2         1541.74         1702.15         2544.8         6971.3         30224           (refer to wavelet coefficient number 2 of the P wave velocity first guess)
+  Parameter 3 : 23119.5  53945.6     1541.3         1572.45         1736.06         2595.5         7110.18         30826.1           (refer to wavelet coefficient number 3 of the P wave velocity first guess)
+  Parameter 4 : -2169.63  -929.842     61.9895         63.2421         69.8222         104.388         285.963         1239.79           (refer to wavelet coefficient number 7 of the P wave velocity first guess)
+  Parameter 5 : -1369.1  -586.759     39.1173         39.9077         44.06         65.872         180.452         782.345           (refer to wavelet coefficient number 15 of the P wave velocity first guess)
+  Parameter 6 : 12671.1  29566     844.741         861.811         951.48         1422.51         3896.87         16894.8           (refer to wavelet coefficient number 0 of the S wave velocity first guess)
+  Parameter 7 : 11408.5  26619.8     760.565         775.933         856.666         1280.76         3508.56         15211.3           (refer to wavelet coefficient number 1 of the S wave velocity first guess)
+  Parameter 8 : 10876.5  25378.6     725.103         739.755         816.724         1221.05         3344.97         14502.1           (refer to wavelet coefficient number 2 of the S wave velocity first guess)
+  Parameter 9 : 11184.8  26097.8     745.651         760.719         839.869         1255.65         3439.76         14913           (refer to wavelet coefficient number 3 of the S wave velocity first guess)
+  Parameter 10 : -1480.88  -634.662     42.3108         43.1658         47.657         71.2498         195.184         846.217           (refer to wavelet coefficient number 7 of the S wave velocity first guess)
+  Parameter 11 : -934.48  -400.492     26.6994         27.239         30.0731         44.9608         123.167         533.989           (refer to wavelet coefficient number 15 of the S wave velocity first guess)
+  Wavelet:db12
+                  min     max     delta for T0   delta for T1   delta for T2   delta for T3   delta for T4   delta for T5   
+  Parameter 0 : 23827.7  55597.9     1588.51         1620.61         1789.23         2674.99         7327.95         31770.2           (refer to wavelet coefficient number 0 of the P wave velocity first guess)
+  Parameter 1 : 22739.2  53058.2     1515.95         1546.58         1707.5         2552.8         6993.21         30319           (refer to wavelet coefficient number 1 of the P wave velocity first guess)
+  Parameter 2 : 22802.5  53205.8     1520.17         1550.88         1712.25         2559.9         7012.67         30403.3           (refer to wavelet coefficient number 2 of the P wave velocity first guess)
+  Parameter 3 : 25162.6  58712.8     1677.51         1711.41         1889.47         2824.86         7738.51         33550.2           (refer to wavelet coefficient number 3 of the P wave velocity first guess)
+  Parameter 4 : 852.353  1988.82     56.8235         57.9718         64.0035         95.6887         262.132         1136.47           (refer to wavelet coefficient number 7 of the P wave velocity first guess)
+  Parameter 5 : 538.294  1256.02     35.8863         36.6114         40.4207         60.4311         165.547         717.725           (refer to wavelet coefficient number 15 of the P wave velocity first guess)
+  Parameter 6 : 11668.1  27225.5     777.873         793.591         876.161         1309.91         3588.4         15557.5           (refer to wavelet coefficient number 0 of the S wave velocity first guess)
+  Parameter 7 : 10925.2  25492.1     728.345         743.063         820.376         1226.51         3359.93         14566.9           (refer to wavelet coefficient number 1 of the S wave velocity first guess)
+  Parameter 8 : 10968.4  25592.8     731.224         746         823.618         1231.35         3373.2         14624.5           (refer to wavelet coefficient number 2 of the S wave velocity first guess)
+  Parameter 9 : 12579.3  29351.7     838.619         855.565         944.583         1412.2         3868.63         16772.4           (refer to wavelet coefficient number 3 of the S wave velocity first guess)
+  Parameter 10 : 581.773  1357.47     38.7848         39.5686         43.6855         65.3122         178.918         775.697           (refer to wavelet coefficient number 7 of the S wave velocity first guess)
+  Parameter 11 : 367.412  857.294     24.4941         24.9891         27.5891         41.2472         112.994         489.883           (refer to wavelet coefficient number 15 of the S wave velocity first guess)
+  Wavelet:haar
+                  min     max     delta for T0   delta for T1   delta for T2   delta for T3   delta for T4   delta for T5   
+  Parameter 0 : 22082.5  51525.9     1472.17         1501.92         1658.19         2479.08         6791.26         29443.4           (refer to wavelet coefficient number 0 of the P wave velocity first guess)
+  Parameter 1 : 23115.3  53935.6     1541.02         1572.16         1735.73         2595.02         7108.86         30820.4           (refer to wavelet coefficient number 1 of the P wave velocity first guess)
+  Parameter 2 : 24148  56345.4     1609.87         1642.4         1813.28         2710.95         7426.47         32197.3           (refer to wavelet coefficient number 2 of the P wave velocity first guess)
+  Parameter 3 : 25180.7  58755.1     1678.72         1712.64         1890.83         2826.89         7744.08         33574.3           (refer to wavelet coefficient number 3 of the P wave velocity first guess)
+  Parameter 4 : -602.43  -258.184     17.2123         17.5601         19.3872         28.9848         79.402         344.246           (refer to wavelet coefficient number 5 of the P wave velocity first guess)
+  Parameter 5 : -602.43  -258.184     17.2123         17.5601         19.3872         28.9848         79.402         344.246           (refer to wavelet coefficient number 6 of the P wave velocity first guess)
+  Parameter 6 : 10477.2  24446.9     698.482         712.596         786.739         1176.22         3222.16         13969.6           (refer to wavelet coefficient number 0 of the S wave velocity first guess)
+  Parameter 7 : 11182.1  26091.6     745.474         760.538         839.67         1255.35         3438.94         14909.5           (refer to wavelet coefficient number 1 of the S wave velocity first guess)
+  Parameter 8 : 11887  27736.4     792.467         808.481         892.6         1334.48         3655.73         15849.3           (refer to wavelet coefficient number 2 of the S wave velocity first guess)
+  Parameter 9 : 12591.9  29381.1     839.46         856.423         945.531         1413.62         3872.51         16789.2           (refer to wavelet coefficient number 3 of the S wave velocity first guess)
+  Parameter 10 : -411.188  -176.223     11.7482         11.9856         13.2327         19.7836         54.1957         234.965           (refer to wavelet coefficient number 4 of the S wave velocity first guess)
+  Parameter 11 : -411.188  -176.223     11.7482         11.9856         13.2327         19.7836         54.1957         234.965           (refer to wavelet coefficient number 5 of the S wave velocity first guess)
+  Wavelet:coif3
+                  min     max     delta for T0   delta for T1   delta for T2   delta for T3   delta for T4   delta for T5   
+  Parameter 0 : 23633.6  55145     1575.57         1607.41         1774.66         2653.2         7268.27         31511.5           (refer to wavelet coefficient number 0 of the P wave velocity first guess)
+  Parameter 1 : 25012.4  58362.3     1667.49         1701.19         1878.19         2808         7692.31         33349.9           (refer to wavelet coefficient number 1 of the P wave velocity first guess)
+  Parameter 2 : 23467.6  54757.8     1564.51         1596.12         1762.19         2634.57         7217.23         31290.2           (refer to wavelet coefficient number 2 of the P wave velocity first guess)
+  Parameter 3 : 22418.4  52309.5     1494.56         1524.76         1683.4         2516.78         6894.54         29891.1           (refer to wavelet coefficient number 3 of the P wave velocity first guess)
+  Parameter 4 : -2051.2  -879.086     58.6058         59.79         66.0109         98.6898         270.354         1172.12           (refer to wavelet coefficient number 7 of the P wave velocity first guess)
+  Parameter 5 : -1603.4  -687.169     45.8113         46.737         51.5998         77.1445         211.332         916.226           (refer to wavelet coefficient number 15 of the P wave velocity first guess)
+  Parameter 6 : 11535.6  26916.5     769.042         784.582         866.215         1295.04         3547.66         15380.8           (refer to wavelet coefficient number 0 of the S wave velocity first guess)
+  Parameter 7 : 12476.7  29112.4     831.782         848.59         936.883         1400.69         3837.09         16635.6           (refer to wavelet coefficient number 1 of the S wave velocity first guess)
+  Parameter 8 : 11422.4  26652.2     761.491         776.879         857.71         1282.32         3512.83         15229.8           (refer to wavelet coefficient number 2 of the S wave velocity first guess)
+  Parameter 9 : 10706.2  24981.1     713.745         728.168         803.931         1201.92         3292.57         14274.9           (refer to wavelet coefficient number 3 of the S wave velocity first guess)
+  Parameter 10 : -1400.04  -600.019     40.0013         40.8096         45.0557         67.3606         184.53         800.026           (refer to wavelet coefficient number 7 of the S wave velocity first guess)
+  Parameter 11 : -1094.4  -469.027     31.2684         31.9003         35.2194         52.6549         144.244         625.369           (refer to wavelet coefficient number 15 of the S wave velocity first guess)
+  Wavelet:coif5
+                  min     max     delta for T0   delta for T1   delta for T2   delta for T3   delta for T4   delta for T5   
+  Parameter 0 : 23364.2  54516.5     1557.61         1589.09         1754.43         2622.96         7185.42         31152.3           (refer to wavelet coefficient number 0 of the P wave velocity first guess)
+  Parameter 1 : 22452.7  52389.6     1496.85         1527.09         1685.98         2520.63         6905.09         29936.9           (refer to wavelet coefficient number 1 of the P wave velocity first guess)
+  Parameter 2 : 23654.5  55193.8     1576.96         1608.83         1776.22         2655.55         7274.69         31539.3           (refer to wavelet coefficient number 2 of the P wave velocity first guess)
+  Parameter 3 : 25060.6  58474.8     1670.71         1704.47         1881.81         2813.41         7707.14         33414.2           (refer to wavelet coefficient number 3 of the P wave velocity first guess)
+  Parameter 4 : -2204.37  -944.732     62.9821         64.2548         70.9403         106.059         290.543         1259.64           (refer to wavelet coefficient number 7 of the P wave velocity first guess)
+  Parameter 5 : -1701.61  -729.26     48.6173         49.5997         54.7604         81.8697         224.276         972.346           (refer to wavelet coefficient number 15 of the P wave velocity first guess)
+  Parameter 6 : 11351.8  26487.4     756.784         772.077         852.408         1274.4         3491.12         15135.7           (refer to wavelet coefficient number 0 of the S wave velocity first guess)
+  Parameter 7 : 10729.6  25035.7     715.307         729.761         805.69         1204.55         3299.78         14306.1           (refer to wavelet coefficient number 1 of the S wave velocity first guess)
+  Parameter 8 : 11549.9  26949.7     769.992         785.551         867.285         1296.64         3552.05         15399.8           (refer to wavelet coefficient number 2 of the S wave velocity first guess)
+  Parameter 9 : 12509.7  29189.2     833.977         850.83         939.355         1404.39         3847.22         16679.5           (refer to wavelet coefficient number 3 of the S wave velocity first guess)
+  Parameter 10 : -1504.59  -644.826     42.9884         43.857         48.4202         72.3908         198.309         859.767           (refer to wavelet coefficient number 7 of the S wave velocity first guess)
+  Parameter 11 : -1161.43  -497.755     33.1837         33.8542         37.3766         55.8801         153.08         663.674           (refer to wavelet coefficient number 15 of the S wave velocity first guess)
+
+  Energy of the prior : 530.075
+
+P A R A M E T E R S  O F  T H E  E I K O N A L
+
+  nx: 20  ny: 20  nz: 257
+  nzFilt: 25
+  dx: 33.6842  dy: 33.6842  dz: 3.92157
+  dzFilt: 41.8301
+  xminGlob: 80  xmaxGlob: 720
+  yminGlob: 80  ymaxGlob: 720
+  zminGlob: -1.96078  zmaxGlob: 1001.96
+  Number of sweeps : 1
+  EPSIN : 5
+
+O U T P U T  P A R A M E T E R S
+
+  Output directory : ./OUTPUT_FILES/344/
+  Quantile chosen : 0.95
+
+C O N F I G  O F  T H E  A L G O R I T H M
+
+  Number of different temperatures : 6
+  Temperature max : 4000
+  Number of iterations 50000
+  Probability of allowing swapping : 0.25
+  Number of components to modify in a MH iteration as a function of T : 
+    For T0 : 1      For T1 : 4      For T2 : 4      For T3 : 4      For T4 : 4      For T5 : 6  
+  Temperature ladder : T[0] = 1  T[1] = 5.25306  T[2] = 27.5946  T[3] = 144.956  T[4] = 761.462  T[5] = 4000  
+
+W A V E L E T  C O N F I G
+
+  Wavelet used : haar
+  Number of DWT stages : 20
+  Size of coeffsP[db8] : 256
+  Size of flagP[db8] : 2
+  Size of lengthP[db8] : 8
+  Size of coeffsS[db8] : 256
+  Size of flagS[db8] : 2
+  Size of lengthS[db8] : 8
+  Size of coeffsP[db12] : 256
+  Size of flagP[db12] : 2
+  Size of lengthP[db12] : 8
+  Size of coeffsS[db12] : 256
+  Size of flagS[db12] : 2
+  Size of lengthS[db12] : 8
+  Size of coeffsP[haar] : 256
+  Size of flagP[haar] : 2
+  Size of lengthP[haar] : 8
+  Size of coeffsS[haar] : 256
+  Size of flagS[haar] : 2
+  Size of lengthS[haar] : 8
+  Size of coeffsP[coif3] : 256
+  Size of flagP[coif3] : 2
+  Size of lengthP[coif3] : 8
+  Size of coeffsS[coif3] : 256
+  Size of flagS[coif3] : 2
+  Size of lengthS[coif3] : 8
+  Size of coeffsP[coif5] : 256
+  Size of flagP[coif5] : 2
+  Size of lengthP[coif5] : 8
+  Size of coeffsS[coif5] : 256
+  Size of flagS[coif5] : 2
+  Size of lengthS[coif5] : 8
+

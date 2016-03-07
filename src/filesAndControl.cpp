@@ -28,11 +28,11 @@ void checkConfig(const Configuration* config)
     for (int i=0; i<config->nbt;i++) 
       std::cout << "config->nc[" << i << "] = " << config->nc[i] << std::endl;
     std::cout << std::endl;
-    for (unsigned int i=0; i<config->noXptdtsdVec.size();i++)
-      std::cout << "config->noXptdtsdVec[" << i << "] = " << config->noXptdtsdVec[i] << std::endl;
+    for (unsigned int i=0; i<config->nxVec.size();i++)
+      std::cout << "config->nxVec[" << i << "] = " << config->nxVec[i] << std::endl;
     std::cout << std::endl;
-    for (unsigned int i=0; i<config->noYptdtsdVec.size();i++)
-      std::cout << "config->noYptdtsdVec[" << i << "] = " << config->noYptdtsdVec[i] << std::endl;
+    for (unsigned int i=0; i<config->nyVec.size();i++)
+      std::cout << "config->nyVec[" << i << "] = " << config->nyVec[i] << std::endl;
     std::cout << std::endl;
     for (unsigned int i=0; i<config->nzFiltVec.size();i++)
       std::cout << "config->nzFiltVec[" << i << "] = " << config->nzFiltVec[i] << std::endl;
@@ -179,9 +179,9 @@ void write_config(const Run* run, const Configuration* config)
     file << "  nzFilt: " << config->data.nzFilt << std::endl;
     file << "  dx: " << config->data.dx << "  dy: " << config->data.dy << "  dz: " << config->data.dz << std::endl;
     file << "  dzFilt: " << config->data.dzFilt << std::endl;
-    file << "  xmin: " << config->data.xminGrid << "  xmax: " << config->data.xminGrid+(config->data.nx-1)*config->data.dx << std::endl;
-    file << "  ymin: " << config->data.yminGrid << "  ymax: " << config->data.yminGrid+(config->data.ny-1)*config->data.dy << std::endl;
-    file << "  zmin: " << config->data.zminGrid << "  zmax: " << config->data.zminGrid+(config->data.nzFilt-1)*config->data.dzFilt << std::endl;
+    file << "  xminGlob: " << config->data.xminGridGlob << "  xmaxGlob: " << config->data.xminGridGlob+(config->data.nx-1)*config->data.dx << std::endl;
+    file << "  yminGlob: " << config->data.yminGridGlob << "  ymaxGlob: " << config->data.yminGridGlob+(config->data.ny-1)*config->data.dy << std::endl;
+    file << "  zminGlob: " << config->data.zminGridGlob << "  zmaxGlob: " << config->data.zminGridGlob+(config->data.nzFilt-1)*config->data.dzFilt << std::endl;
     file << "  Number of sweeps : " << config->nSweeps << std::endl;
     file << "  EPSIN : " << config-> epsin << std::endl;
 
@@ -305,7 +305,8 @@ void copyDataFiles(const Configuration* config)
       if(status != 0) {
         std::cout << "Error while copying "+config->filesDir+config->name_of_times_file+" to ";
         std::cout << config->outputDir+config->name_of_times_file+" (status = "<< status << ")" << std::endl;
-        exit(1);
+        if (! config->calculateTimesForFirstGuess)
+          exit(1);
       }
     }
   }
@@ -515,7 +516,7 @@ void writeAverages(const Run* run, const Configuration* config)
 // Write the average, variance and quantiles profiles on files
 {
   if (config->mpiConfig.rank == 0) {   // (In case of parallel implementation just one process has to create files)
-    std::string strFileGlobalAverage,strFileGlobalVar;
+    std::string strFileGlobalAverage,strFileGlobalVar,strFileGlobalVarVpVs;
     strFileGlobalVar = config->outputDir+"globalVarP."+config->code+".dat";   // We will obtain /home/abottero/globalVarP.451.dat for example
     strFileGlobalAverage = config->outputDir+"globalAverageP."+config->code+".dat";   // We will obtain /home/abottero/globalAverageP.451.dat for example
     std::ofstream fileGlobalVar(strFileGlobalVar.c_str()),fileGlobalAverage(strFileGlobalAverage.c_str());
@@ -527,14 +528,17 @@ void writeAverages(const Run* run, const Configuration* config)
     fileGlobalVar.close(); 
     if(config->swaves) {
       strFileGlobalVar = config->outputDir+"globalVarS."+config->code+".dat";   // We will obtain /home/abottero/globalVarS.451.dat for example
+      strFileGlobalVarVpVs = config->outputDir+"globalVarVpVs."+config->code+".dat";   // We will obtain /home/abottero/globalVarVpVs.451.dat for example
       strFileGlobalAverage = config->outputDir+"globalAverageS."+config->code+".dat";   // We will obtain /home/abottero/globalAverageS.451.dat for example
-      std::ofstream fileGlobalVar(strFileGlobalVar.c_str()),fileGlobalAverage(strFileGlobalAverage.c_str());
+      std::ofstream fileGlobalVar(strFileGlobalVar.c_str()),fileGlobalVarVpVs(strFileGlobalVarVpVs.c_str()),fileGlobalAverage(strFileGlobalAverage.c_str());
       for (int iz=0;iz<config->data.nzFilt-1;iz++) { // Loop on the values
         fileGlobalVar << config->data.zFiltp[iz] << " " << run->varS[iz] << std::endl;
+        fileGlobalVarVpVs << config->data.zFiltp[iz] << " " << run->varVpVs[iz] << std::endl;
         fileGlobalAverage << config->data.zFiltp[iz] << " " << run->averageS[iz] << std::endl;
       }
       fileGlobalAverage.close(); 
-      fileGlobalVar.close(); 
+      fileGlobalVar.close();
+      fileGlobalVarVpVs.close();
     }
     for(int i=0; i<(int)run->chains.size();i++) { // Loop on all the chains
       std::ostringstream ii;   // Store i as a string
@@ -669,7 +673,8 @@ void computeResidualsForBestModel(Run* run, Configuration* config)
   VelocityModel velModel;
   velModel.nx=config->data.nx; velModel.ny=config->data.ny; velModel.nz=config->data.nzFilt;
   velModel.dx=config->data.dx; velModel.dy=config->data.dy; velModel.dz=config->data.dzFilt;
-  velModel.xmin = config->data.xminGrid; velModel.ymin = config->data.yminGrid; velModel.zmin = config->data.zminGrid;
+  calculateShiftForEachShot(&velModel,config);
+  //velModel.xmin = config->data.xminGrid; velModel.ymin = config->data.yminGrid; velModel.zmin = config->data.zminGrid;
   velModel.velP= new tab3d<double>(velModel.nz-1,velModel.nx-1,velModel.ny-1,-1.0); // Create a (nz-1,nx-1,ny-1) mesh and initialize every cell at -1 
  // Copy the file content into the velocity model (extend the 1D profile to obtain a 3D profile).
   meshing(&bestProfileP,&velModel,false); // Extend this profile on the whole mesh 
@@ -685,6 +690,7 @@ void computeResidualsForBestModel(Run* run, Configuration* config)
   int numberOfShots = (int)config->data.coordShots.size();
   int numberOfStations = (int)config->data.coordStations.size();
   std::vector<int> indexP, indexS;
+  std::vector<double> t0P,t0S;
  // double sumP=0.0, sumS=0.0;
   double t0=0.0;   // Origin time of the shot (if config->recalculateT0 == 1 we will recalculate it)
   int numberOfEikonalToCompute = 0;
@@ -692,64 +698,107 @@ void computeResidualsForBestModel(Run* run, Configuration* config)
     numberOfEikonalToCompute = 2*numberOfShots;
   else
     numberOfEikonalToCompute = numberOfShots;
-   
+  
+  std::vector<double> arrivalTimesPforCurrentShot,arrivalTimesSforCurrentShot;
   for(int i=0;i<numberOfEikonalToCompute;i++) { // Loop on the shots
     if (i<numberOfShots) { // P waves
       if(config->verbose2 && config->mpiConfig.rank == 0)
         std::cout << "     Eikonal computing for best P wave velocity profile, shot number " << i+1 << " on " << numberOfShots << " ..."<< std::endl;
       indexP.push_back(i); 
-      eikonal3d(&tt3dP,&velModel,config,i,false); 
+      eikonal3d(&tt3dP,&velModel,config,i,false);
       //Calculate the P waves travel times everywhere on the mesh (put them on tt3dP) for the shot number i
-      for(int j=0;j<numberOfStations;j++) 
-        arrivalTimes.timesP.push_back(getTime(&tt3dP,config->data.coordStations[j],&velModel));
-
+      if(i==0 && config->mpiConfig.rank == 0) {
+        std::cout << "       Parameters of the Eikonal: " << std::endl;
+        std::cout << "         nz: " << tt3dP.get_nz() << " ny: " << tt3dP.get_ny() << " nx: " << tt3dP.get_nx() << std::endl;
+        std::cout << "         dz: " << velModel.dz << " dy: " << velModel.dy << " dx: " << velModel.dx << std::endl;
+        std::cout << "         zmin: " << velModel.zmin[i] << " ymin: " << velModel.ymin[i] << " xmin: " << velModel.xmin[i] << std::endl;
+        std::cout << "         nsweep: " << config->nSweeps << " epsin: " << config->epsin << std::endl;
+      }
+      arrivalTimesPforCurrentShot.clear();
+      for(int j=0;j<numberOfStations;j++) {
+        arrivalTimes.timesP.push_back(getTime(&tt3dP,config->data.coordStations[j],&velModel,i));
+        arrivalTimesPforCurrentShot.push_back(getTime(&tt3dP,config->data.coordStations[j],&velModel,i));
+      }
+      // (above) Save the arrival times at the receivers for the shot calculated by this proc
       if (config->recalculateT0) {
-        int nUsedP=0;  // Number of travel times used for P waves
-        for(int k=0;k<(int)arrivalTimes.timesP.size();k++) { // Calculation of t0
-          int idxP=indexP[(int)floor(k/numberOfStations)]*numberOfStations+k-numberOfStations*(int)floor(k/numberOfStations); // index of the arrival time
+        t0=0.0;
+        int nUsedP=0; // Number of travel times used for P waves (some data travel times can be < 0, meaning that we don't know them)
+        for(int k=0;k<(int)arrivalTimesPforCurrentShot.size();k++) { // Calculation of t0
+          int idxP=i*numberOfStations+k; // index of that arrival time in the data file (picked first arrival times)
           if (config->data.times.timesP[idxP] > 0.0) {
-            t0+=config->data.times.timesP[idxP]-arrivalTimes.timesP[k];
+            t0+=config->data.times.timesP[idxP]-arrivalTimesPforCurrentShot[k];
             nUsedP++;
           }
         }
-        t0=t0/nUsedP;
+        t0P.push_back(t0/nUsedP);
+      }
+      else {
+        t0P.push_back(0.0);
       }
     } 
     else { // S waves
       if(config->verbose2 && config->mpiConfig.rank == 0)
         std::cout << "     Eikonal computing for best S wave velocity profile, shot number " << i+1-numberOfShots << " on " << numberOfShots << " ..."<< std::endl;
       indexS.push_back(i-numberOfShots);
-      eikonal3d(&tt3dS,&velModel,config,i-numberOfShots,true); 
+      eikonal3d(&tt3dS,&velModel,config,i-numberOfShots,true);
+      arrivalTimesSforCurrentShot.clear();
       // Calculate the S waves travel times everywhere on the mesh (put them on tt3dS) for the shot number i
-      for(int j=0;j<numberOfStations;j++) 
-        arrivalTimes.timesS.push_back(getTime(&tt3dS,config->data.coordStations[j],&velModel));
-    }  
+      for(int j=0;j<numberOfStations;j++) {
+        arrivalTimes.timesS.push_back(getTime(&tt3dS,config->data.coordStations[j],&velModel,i-numberOfShots));
+        arrivalTimesSforCurrentShot.push_back(getTime(&tt3dS,config->data.coordStations[j],&velModel,i-numberOfShots));
+      }
+      if (config->recalculateT0) {
+        t0=0.0;
+        int nUsedS=0;  // Number of travel times used for S waves
+        for(int k=0;k<(int)arrivalTimesSforCurrentShot.size();k++) { // Calculation of t0
+          int idxS=(i-numberOfShots)*numberOfStations+k;
+          if (config->data.times.timesS[idxS] > 0.0) {
+            t0+=config->data.times.timesS[idxS]-arrivalTimesSforCurrentShot[k];
+            nUsedS++;
+          }
+        }
+        t0S.push_back(t0/nUsedS);
+      }
+      else {
+        t0S.push_back(0.0);
+      }
+    }
   }
-
-/*
-  for(int k=0;k<(int)arrivalTimes.timesP.size();k++) { // Loop on the P wave travel times calculated
-    int idxP=indexP[(int)floor(k/numberOfStations)]*numberOfStations+k-numberOfStations*(int)floor(k/numberOfStations); // index of the arrival time corresponding to the one calculated. 
-    double diffP=0.0;
+  double diffP=0.0,diffS=0.0;
+  double sumP=0.0, sumS=0.0;
+  double E = 0.0;
+  for(int k=0;k<(int)arrivalTimes.timesP.size();k++) { // Loop on the P wave travel times calculated by this proc
+    int idxP=indexP[(int)floor(k/numberOfStations)]*numberOfStations+k-numberOfStations*(int)floor(k/numberOfStations); // Position corresponding to that travel time in the data file (picked first arrival times)
+    int idxShotP = (int)floor(k/numberOfStations); // index of the shot (for that proc)
     if (config->data.times.timesP[idxP] > 0.0)
-      diffP= config->data.times.timesP[idxP]-(t0+arrivalTimes.timesP[k]);
- //   std::cout << " config->data.times.timesP[" << idxP << "]  : " << config->data.times.timesP[idxP] << "  arrivalTimes.timesP[" << k << "] : " << arrivalTimes.timesP[k] << "  Diff : " << diffP << std::endl; 
- //   sumP+=pow(diffP/config->data.sigmaP,2.0)/2.0; // sum of the squares of the differences between the P wave first arrival times and the data
+      diffP = config->data.times.timesP[idxP]-(t0P[idxShotP]+arrivalTimes.timesP[k]);
+    sumP+=pow(diffP/config->data.sigmaP,2.0)/2.0; // sum of the squares of the differences between the P wave first arrival times and the data
   }
   if(config->swaves) { 
     for(int k=0;k<(int)arrivalTimes.timesS.size();k++) { // Loop on the S wave travel times calculated
       int idxS=indexS[(int)floor(k/numberOfStations)]*numberOfStations+k-numberOfStations*(int)floor(k/numberOfStations); // index of the arrival time corresponding to the one calculated
-      double diffS=0.0;
+      int idxShotS = (int)floor(k/numberOfStations); // index of the shot (for that proc)
       if (config->data.times.timesS[idxS] > 0.0)
-        diffS= config->data.times.timesS[idxS]-(t0+arrivalTimes.timesS[k]);
-    //    std::cout << " config->data.times.timesS[" << idxS << "]  : " << config->data.times.timesS[idxS] << "  arrivalTimes.timesS[" << k << "] : " << arrivalTimes.timesS[k] << "  Diff : " << diffS << std::endl;   
- //     sumS+=pow(diffS/config->data.sigmaS,2.0)/2.0; // sum of the squares of the differences between the P wave first arrival times
+        diffS = config->data.times.timesS[idxS]-(t0S[idxShotS]+arrivalTimes.timesS[k]);
+      sumS+=pow(diffS/config->data.sigmaS,2.0)/2.0; // sum of the squares of the differences between the P wave first arrival times
     }
   }
-//  E=(sumP+sumS+config->data.Ep)/(run->chains[run->chainBestE[EminIdx]]->T);
-//  std::ostringstream ii;   // Store E as a string
-//  ii << E;
-*/
+  if(config->mpiConfig.rank == 0 && config->verbose1) {
+    for (int idxShotP = 0;idxShotP < (int)t0P.size();idxShotP++)
+       std::cout << "   t0P[" << idxShotP << "] = " << t0P[idxShotP] << "   ";
+    std::cout << std::endl;
+    for (int idxShotS = 0;idxShotS < (int)t0S.size();idxShotS++)
+       std::cout << "   t0S[" << idxShotS << "] = " << t0S[idxShotS] << "   ";
+    std::cout << std::endl;
+  }
+  E=(sumP+sumS+config->data.Ep)/(run->chains[run->chainBestE[EminIdx]]->T);
+    
+  //  E=(sumP+sumS+config->data.Ep)/(run->chains[run->chainBestE[EminIdx]]->T);
+  //  std::ostringstream ii;   // Store E as a string
+  //  ii << E;
+
   if(config->mpiConfig.rank == 0) {
+    std::cout << "  Energy of the best model :" << E*run->chains[run->chainBestE[EminIdx]]->T << std::endl;
     if(config->swaves)
       write_two_columns_file(&arrivalTimes.timesP,&arrivalTimes.timesS, config->outputDir+"bestModelTimes."+config->code+".dat");
     else
@@ -879,6 +928,22 @@ void write_three_columns_file(const std::vector<int>* column1, const std::vector
       std::cout << "Impossible to create the file : "+name_of_file+" -> the three columns don't have the same size" << std::endl;
     for (unsigned int i = 0; i <  (*column1).size(); i++) // Loop on the coeffs
       output_file << (*column1)[i] << " " << std::setprecision(12) << (*column2)[i] << " " << (*column3)[i] << std::endl;
+  }
+  else {
+    std::cout << "Unable to open file "+name_of_file << std::endl;
+    exit(0);
+  }
+}
+
+void write_four_columns_file(const std::vector<int>* column1, const std::vector<double>* column2, const std::vector<double>* column3, const std::vector<double>* column4, const std::string name_of_file)
+// Write a four columns file from four vectors of the same size
+{
+  std::ofstream output_file(name_of_file.c_str());
+  if (output_file.is_open()) {
+    if (((*column1).size() != (*column2).size()) || ((*column1).size() != (*column3).size()) || ((*column4).size() != (*column4).size()))
+      std::cout << "Impossible to create the file : "+name_of_file+" -> the four columns don't have the same size" << std::endl;
+    for (unsigned int i = 0; i <  (*column1).size(); i++) // Loop on the coeffs
+      output_file << (*column1)[i] << " " << std::setprecision(12) << (*column2)[i] << " " << (*column3)[i] << " " << (*column4)[i] << std::endl;
   }
   else {
     std::cout << "Unable to open file "+name_of_file << std::endl;

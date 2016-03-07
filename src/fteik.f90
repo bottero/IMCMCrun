@@ -70,7 +70,7 @@
 !
 !________________________________________________________________________
 !
-subroutine fteik(vel,tt,nz,nx,ny,zsin,xsin,ysin,dzin,dxin,dyin,nsweep,epsin)
+subroutine FTeik(vel,tt,nz,nx,ny,zsin,xsin,ysin,dzin,dxin,dyin,nsweep,epsin)
 
    implicit none
 !
@@ -115,7 +115,7 @@ subroutine fteik(vel,tt,nz,nx,ny,zsin,xsin,ysin,dzin,dxin,dyin,nsweep,epsin)
    real(kind=PRES)   ::   sgnrz,sgnrx,sgnry
    real(kind=PRES)   ::   t0c,tzc,txc,tyc
    real(kind=PRES)   ::   apoly,bpoly,cpoly,dpoly
-   
+
 !
 !  Check grid size
 !_________________
@@ -440,7 +440,6 @@ subroutine fteik(vel,tt,nz,nx,ny,zsin,xsin,ysin,dzin,dxin,dyin,nsweep,epsin)
 !
 ! End loop for global sweeps
 enddo
-
 !
 ! That's all
 ! It's easy
@@ -489,8 +488,7 @@ enddo
       stop
 
 !
-    
-end subroutine fteik
+end subroutine FTeik
 !
 ! That's all
 ! It's easy

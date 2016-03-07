@@ -1,3 +1,5 @@
+# Script made by Thomas Romary to set the prior (avoid the out of domains)
+
 N = 100000
 a = 3000
 b = 5000
