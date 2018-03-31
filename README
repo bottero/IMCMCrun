@@ -1,9 +1,7 @@
-IMCMCrun is used to perform a seismic inversion using a fast eikonal solver and an algorithm based on interactive 
-markov chains. (TODO add a reference to the article when it is done). 
-Author : Alexis Bottero (alexis Dot bottero At gmail Dot com). Feel free to contact me for any questions. 
+IMCMCrun is used to perform a seismic inversion using a fast eikonal solver and an algorithm based on interactive markov chains. (See the article Bottero, Alexis, et al. "Stochastic seismic tomography by interacting Markov chains." Geophysical Journal International 207.1 (2016): 374-392).
+Author : Alexis Bottero (alexis Dot bottero At gmail Dot com). Feel free to contact me for any question. 
 Source code (c/c++/fortran) can be found in directory src. This program include wavelet library : Wavelib. 
-This program can be run in parallel on a CPU cluster. Directory utils contains some useful python scripts to watch 
-the results of an inversion.
+This program can be run in parallel on a CPU cluster. Directory utils contains some useful python scripts to watch the results of an inversion.
 
 PREREQUISITES
 =============
@@ -67,7 +65,7 @@ MANUAL
 ======
 
 This part just contains few information. Please read carefully the HomogeneousSynthetic/configExample.cfg as it contains details
-on different options.
+on the different options.
 
 Max and min values are computed from iteration TRESH=50 for now. This value can be modified in src/define.h
 
